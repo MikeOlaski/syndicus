@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, User, LogOut } from "lucide-react";
+import { MessageSquare, User, LogOut, LogIn, UserPlus, Briefcase, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 const Header = () => {
@@ -90,45 +92,68 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {!user ? (
-            <>
-              <Button
-                variant="outline"
-                className="hidden sm:flex"
-                onClick={() => navigate("/auth")}
-              >
-                Join as Subscriber
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <User className="w-5 h-5" />
               </Button>
-              <Button onClick={() => navigate("/auth")}>
-                Join as Coach
-              </Button>
-            </>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled className="font-medium">
-                  {user.email}
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                  {userRole === "coach" ? "Coach" : "Subscriber"}
-                </DropdownMenuItem>
-                {userRole === "coach" && (
-                  <DropdownMenuItem onClick={() => navigate("/coach-dashboard")}>
-                    Dashboard
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 bg-background z-50">
+              {!user ? (
+                <>
+                  <DropdownMenuLabel className="pb-2">
+                    <div className="font-semibold text-base">Welcome to Syndic.us</div>
+                    <div className="text-xs font-normal text-muted-foreground mt-1">
+                      Sign in to access your account
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/auth")}>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  <DropdownMenuItem onClick={() => navigate("/auth")}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Create Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/auth")} className="text-primary">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    Join as Coach
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/help")}>
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Help & Support
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuLabel>
+                    <div className="font-medium">{user.email}</div>
+                    <div className="text-xs font-normal text-muted-foreground mt-1">
+                      {userRole === "coach" ? "Coach" : "Subscriber"}
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {userRole === "coach" && (
+                    <DropdownMenuItem onClick={() => navigate("/coach-dashboard")}>
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => navigate("/help")}>
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Help & Support
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
