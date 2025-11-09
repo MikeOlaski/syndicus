@@ -9,8 +9,8 @@ const Pricing = () => {
 
   const plans = [
     {
-      name: "Subscriber",
-      price: "$29",
+      name: "Plus Subscriber",
+      price: "$27",
       period: "/month",
       description: "Access to all coach PersonaBots",
       features: [
@@ -24,8 +24,8 @@ const Pricing = () => {
       popular: false
     },
     {
-      name: "Coach Partner",
-      price: "$99",
+      name: "Prime Coach Partner",
+      price: "$97",
       period: "/month",
       description: "Create and syndicate your PersonaBot",
       features: [
