@@ -12,6 +12,7 @@ import CreateClaim from "./pages/CreateClaim";
 import SubscriberDashboard from "./pages/SubscriberDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminCoaches from "./pages/AdminCoaches";
 import ChatPage from "./pages/ChatPage";
 import MyTwin from "./pages/MyTwin";
 import Conversations from "./pages/Conversations";
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/subscriber-dashboard" element={<SubscriberDashboard />} />
           <Route path="/subscriber-dashboard/chat" element={<ChatPage role="subscriber" />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-dashboard/coaches" element={<AdminCoaches />} />
           <Route path="/admin-dashboard/chat" element={<ChatPage role="admin" />} />
           <Route path="/coach/:coachId" element={<CoachProfile />} />
           <Route path="/coach/:coachId/chat" element={<ChatHome />} />

@@ -58,7 +58,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
 
   const adminItems = [
     { title: "Dashboard", url: "/admin-dashboard", icon: LayoutDashboard },
-    { title: "Manage Coaches", url: "/admin-dashboard/coaches", icon: Briefcase },
+    { title: "Coaches", url: "/admin-dashboard/coaches", icon: Briefcase },
     { title: "Manage Subscribers", url: "/admin-dashboard/subscribers", icon: Users },
     { title: "System Chat", url: "/admin-dashboard/chat", icon: MessageSquare },
   ];
