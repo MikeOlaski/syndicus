@@ -84,7 +84,7 @@ const coaches = [
 
 const CoachDirectory = () => {
   return (
-    <section className="py-16 px-4 bg-muted/30" id="coaches">
+    <section className="py-16 px-4 bg-muted/30" id="coach-directory">
       <div className="container mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Discover Expert Coaches</h2>

@@ -1,7 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const scrollToCoaches = () => {
+    const coachSection = document.querySelector('#coach-directory');
+    coachSection?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <section className="py-20 px-4">
       <div className="container mx-auto max-w-4xl text-center">
@@ -17,11 +25,11 @@ const Hero = () => {
           guidance, 24/7 availability, and transformative insights tailored to your unique journey.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <Button size="lg" className="bg-gradient-primary hover:opacity-90">
+          <Button size="lg" className="bg-gradient-primary hover:opacity-90" onClick={scrollToCoaches}>
             Find Your Coach
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
-          <Button size="lg" variant="outline">
+          <Button size="lg" variant="outline" onClick={() => navigate('/auth')}>
             Watch Demo
           </Button>
         </div>
