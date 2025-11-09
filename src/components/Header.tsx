@@ -1,7 +1,61 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, User } from "lucide-react";
+import { MessageSquare, User, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserRole(session.user.id);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          loadUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadUserRole = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .single();
+    
+    if (data) {
+      setUserRole(data.role);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   return (
     <header className="border-b bg-background sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -33,15 +87,45 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="hidden sm:flex">
-            Join as Subscriber
-          </Button>
-          <Button>
-            Join as Coach
-          </Button>
-          <Button variant="ghost" size="icon">
-            <User className="w-5 h-5" />
-          </Button>
+          {!user ? (
+            <>
+              <Button
+                variant="outline"
+                className="hidden sm:flex"
+                onClick={() => navigate("/auth")}
+              >
+                Join as Subscriber
+              </Button>
+              <Button onClick={() => navigate("/auth")}>
+                Join as Coach
+              </Button>
+            </>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem disabled className="font-medium">
+                  {user.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                  {userRole === "coach" ? "Coach" : "Subscriber"}
+                </DropdownMenuItem>
+                {userRole === "coach" && (
+                  <DropdownMenuItem onClick={() => navigate("/coach-dashboard")}>
+                    Dashboard
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>
