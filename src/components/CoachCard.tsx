@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ const CoachCard = ({
   image,
   variant = "primary",
 }: CoachCardProps) => {
+  const navigate = useNavigate();
   const buttonClass = variant === "primary" ? "" : "bg-gradient-primary hover:opacity-90";
   
   return (
@@ -35,10 +37,16 @@ const CoachCard = ({
           <img
             src={image}
             alt={name}
-            className="w-16 h-16 rounded-full object-cover"
+            className="w-16 h-16 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/coach/1')}
           />
           <div className="flex-1">
-            <h3 className="font-bold text-lg mb-1">{name}</h3>
+            <h3 
+              className="font-bold text-lg mb-1 cursor-pointer hover:text-primary transition-colors"
+              onClick={() => navigate('/coach/1')}
+            >
+              {name}
+            </h3>
             <p className="text-sm text-primary mb-2">{specialization}</p>
             <div className="flex items-center gap-3 text-sm">
               <div className="flex items-center gap-1">
@@ -65,7 +73,10 @@ const CoachCard = ({
           ))}
         </div>
 
-        <Button className={`w-full ${buttonClass}`}>
+        <Button 
+          className={`w-full ${buttonClass}`}
+          onClick={() => navigate('/coach/1/chat')}
+        >
           <MessageSquare className="w-4 h-4 mr-2" />
           Try Chatbot
           <ExternalLink className="w-3 h-3 ml-auto" />
