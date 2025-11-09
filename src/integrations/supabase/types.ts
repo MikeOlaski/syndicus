@@ -83,6 +83,39 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_base: {
+        Row: {
+          coach_id: string
+          content: string | null
+          created_at: string
+          file_type: string | null
+          file_url: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          content?: string | null
+          created_at?: string
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          content?: string | null
+          created_at?: string
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
