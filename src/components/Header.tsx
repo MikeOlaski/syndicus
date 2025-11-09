@@ -17,6 +17,27 @@ const Header = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const goToDashboard = async () => {
+    try {
+      let role = userRole;
+      if (!role && user) {
+        const { data } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        role = data?.role ?? null;
+        if (role) setUserRole(role);
+      }
+      if (role === "admin") navigate("/admin-dashboard");
+      else if (role === "coach") navigate("/coach-dashboard");
+      else if (role === "subscriber") navigate("/subscriber-dashboard");
+      else navigate("/auth");
+    } catch (e) {
+      navigate("/auth");
+    }
+  };
+
   useEffect(() => {
     // Listen for auth changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -161,15 +182,7 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => {
-                    if (userRole === 'admin') {
-                      navigate('/admin-dashboard');
-                    } else if (userRole === 'coach') {
-                      navigate('/coach-dashboard');
-                    } else if (userRole === 'subscriber') {
-                      navigate('/subscriber-dashboard');
-                    }
-                  }}>
+                  <DropdownMenuItem onClick={goToDashboard}>
                     <Briefcase className="w-4 h-4 mr-2" />
                     Dashboard
                   </DropdownMenuItem>
