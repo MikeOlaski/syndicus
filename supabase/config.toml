@@ -1,1 +1,4 @@
 project_id = "hmdhiutehhxmryiowmgm"
+
+[functions.expert-advisor]
+verify_jwt = false
