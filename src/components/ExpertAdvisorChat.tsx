@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X, Send, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -51,13 +52,25 @@ const ExpertAdvisorChat = ({ initialQuery, onClose }: ExpertAdvisorChatProps) =>
     setIsLoading(true);
 
     try {
+      // Get user session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to use the Expert Advisor.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-advisor`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             messages: isInitial ? [{ role: "user", content: textToSend }] : 
