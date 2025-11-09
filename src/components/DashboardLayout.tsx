@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, MessageSquare, Crown } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -73,7 +74,28 @@ export const DashboardLayout = ({ children, requiredRole }: DashboardLayoutProps
         <div className="flex-1 flex flex-col">
           <header className="h-14 border-b flex items-center px-4 bg-background sticky top-0 z-10">
             <SidebarTrigger />
-            <div className="flex-1" />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-lg">Syndic.us</span>
+                  {userRole === "admin" && (
+                    <Badge variant="default" className="bg-gradient-primary">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Admin
+                    </Badge>
+                  )}
+                  {userRole === "coach" && (
+                    <Badge variant="secondary">Coach</Badge>
+                  )}
+                  {userRole === "subscriber" && (
+                    <Badge variant="secondary">Subscriber</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
           </header>
           
           <main className="flex-1 overflow-auto">
