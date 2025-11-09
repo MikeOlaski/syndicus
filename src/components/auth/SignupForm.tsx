@@ -6,6 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  fullName: z.string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters"),
+  email: z.string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain an uppercase letter")
+    .regex(/[a-z]/, "Password must contain a lowercase letter")
+    .regex(/[0-9]/, "Password must contain a number"),
+});
 
 interface SignupFormProps {
   role: "subscriber" | "coach";
@@ -24,14 +41,32 @@ export const SignupForm = ({ role }: SignupFormProps) => {
     setIsLoading(true);
 
     try {
-      // Sign up the user
-      const { data, error } = await supabase.auth.signUp({
+      // Validate inputs
+      const validationResult = signupSchema.safeParse({
+        fullName,
         email,
         password,
+      });
+
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Sign up the user with validated data
+      const { data, error } = await supabase.auth.signUp({
+        email: validationResult.data.email,
+        password: validationResult.data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName,
+            full_name: validationResult.data.fullName,
           },
         },
       });
@@ -88,6 +123,7 @@ export const SignupForm = ({ role }: SignupFormProps) => {
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           required
+          maxLength={100}
         />
       </div>
 
@@ -100,6 +136,7 @@ export const SignupForm = ({ role }: SignupFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          maxLength={255}
         />
       </div>
 
@@ -112,7 +149,7 @@ export const SignupForm = ({ role }: SignupFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          minLength={6}
+          minLength={8}
         />
       </div>
 
