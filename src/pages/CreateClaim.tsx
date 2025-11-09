@@ -8,6 +8,7 @@ import { Link2, Plus, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import WaitlistModal from "@/components/WaitlistModal";
 
 const claimSchema = z.object({
   botUrl: z.string()
@@ -33,6 +34,7 @@ const claimSchema = z.object({
 
 const CreateClaim = () => {
   const [activeTab, setActiveTab] = useState<"claim" | "create">("claim");
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const { toast } = useToast();
 
   const handleSubmitClaim = (e: React.FormEvent) => {
@@ -200,7 +202,7 @@ const CreateClaim = () => {
                       The PersonaBot creation wizard is currently in development. Join our waitlist 
                       to be notified when it launches.
                     </p>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => setShowWaitlistModal(true)}>
                       📧 Join Waitlist
                     </Button>
                   </div>
@@ -267,6 +269,11 @@ const CreateClaim = () => {
           </div>
         </div>
       </section>
+
+      <WaitlistModal
+        isOpen={showWaitlistModal}
+        onClose={() => setShowWaitlistModal(false)}
+      />
 
       <Footer />
     </div>
