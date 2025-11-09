@@ -92,6 +92,21 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {!user ? (
+            <>
+              <Button
+                variant="outline"
+                className="hidden sm:flex"
+                onClick={() => navigate("/auth")}
+              >
+                Join as Subscriber
+              </Button>
+              <Button onClick={() => navigate("/auth")}>
+                Join as Coach
+              </Button>
+            </>
+          ) : null}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
