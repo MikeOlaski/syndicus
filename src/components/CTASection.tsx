@@ -22,7 +22,7 @@ const CTASection = () => {
           <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90" onClick={() => navigate('/auth')}>
             Become a Coach Partner
           </Button>
-          <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" onClick={scrollToTop}>
+          <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 bg-transparent" onClick={scrollToTop}>
             Learn More
           </Button>
         </div>

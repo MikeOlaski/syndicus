@@ -2,19 +2,19 @@ import { MessageSquare } from "lucide-react";
 
 const footerLinks = {
   Platform: [
-    { label: "Find Coaches", href: "#" },
-    { label: "How It Works", href: "#" },
-    { label: "Pricing", href: "#" },
+    { label: "Find Coaches", href: "/coaches" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "Pricing", href: "/pricing" },
   ],
   "For Coaches": [
-    { label: "Join Platform", href: "#" },
-    { label: "Create Bot", href: "#" },
-    { label: "Success Stories", href: "#" },
+    { label: "Join Platform", href: "/auth" },
+    { label: "Create Bot", href: "/create-claim" },
+    { label: "Success Stories", href: "/success-stories" },
   ],
   Support: [
-    { label: "Help Center", href: "#" },
-    { label: "Contact", href: "#" },
-    { label: "Privacy", href: "#" },
+    { label: "Help Center", href: "/help" },
+    { label: "Contact", href: "/contact" },
+    { label: "Privacy", href: "/privacy" },
   ],
 };
 

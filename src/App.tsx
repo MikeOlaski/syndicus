@@ -10,6 +10,12 @@ import Coaches from "./pages/Coaches";
 import Syndic8 from "./pages/Syndic8";
 import CreateClaim from "./pages/CreateClaim";
 import CoachDashboard from "./pages/CoachDashboard";
+import HowItWorks from "./pages/HowItWorks";
+import Pricing from "./pages/Pricing";
+import SuccessStories from "./pages/SuccessStories";
+import Help from "./pages/Help";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +34,12 @@ const App = () => (
           <Route path="/syndic8" element={<Syndic8 />} />
           <Route path="/create-claim" element={<CreateClaim />} />
           <Route path="/coach-dashboard" element={<CoachDashboard />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/success-stories" element={<SuccessStories />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
