@@ -30,23 +30,28 @@ export const DashboardLayout = ({ children, requiredRole }: DashboardLayoutProps
         return;
       }
 
-      const { data: roleData } = await supabase
+      const { data: rolesData, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.user.id)
-        .single();
+        .eq("user_id", session.user.id);
 
-      if (roleData) {
-        setUserRole(roleData.role);
-        
-        if (requiredRole && roleData.role !== requiredRole) {
-          // Redirect to appropriate dashboard
-          if (roleData.role === "admin") {
-            navigate("/admin-dashboard");
-          } else if (roleData.role === "coach") {
-            navigate("/coach-dashboard");
-          } else {
-            navigate("/subscriber-dashboard");
+      if (!error) {
+        const roles = (rolesData ?? []).map((r: any) => r.role);
+        const resolved = roles.includes("admin")
+          ? "admin"
+          : roles.includes("coach")
+          ? "coach"
+          : roles.includes("subscriber")
+          ? "subscriber"
+          : null;
+
+        if (resolved) {
+          setUserRole(resolved);
+
+          if (requiredRole && resolved !== requiredRole) {
+            if (resolved === "admin") navigate("/admin-dashboard");
+            else if (resolved === "coach") navigate("/coach-dashboard");
+            else navigate("/subscriber-dashboard");
           }
         }
       }

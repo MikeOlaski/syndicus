@@ -21,13 +21,15 @@ const Header = () => {
     try {
       let role = userRole;
       if (!role && user) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        role = data?.role ?? null;
-        if (role) setUserRole(role);
+          .eq("user_id", user.id);
+        if (!error) {
+          const roles = (data ?? []).map((r: any) => r.role);
+          role = roles.includes("admin") ? "admin" : roles.includes("coach") ? "coach" : roles.includes("subscriber") ? "subscriber" : null;
+          if (role) setUserRole(role);
+        }
       }
       if (role === "admin") navigate("/admin-dashboard");
       else if (role === "coach") navigate("/coach-dashboard");
@@ -70,18 +72,22 @@ const Header = () => {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
-        .maybeSingle();
+        .eq("user_id", userId);
       
       if (error) {
         console.error("Error loading user role:", error);
         return;
       }
       
-      if (data) {
-        console.log("User role loaded:", data.role);
-        setUserRole(data.role);
-      }
+      const roles = (data ?? []).map((r: any) => r.role);
+      const resolved = roles.includes("admin")
+        ? "admin"
+        : roles.includes("coach")
+        ? "coach"
+        : roles.includes("subscriber")
+        ? "subscriber"
+        : null;
+      setUserRole(resolved);
     } catch (error) {
       console.error("Exception loading user role:", error);
     }

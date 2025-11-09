@@ -16,20 +16,26 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        const { data: roleData } = await supabase
+        const { data: rolesData } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", session.user.id)
-          .single();
+          .eq("user_id", session.user.id);
 
-        if (roleData) {
-          if (roleData.role === "admin") {
-            navigate("/admin-dashboard");
-          } else if (roleData.role === "coach") {
-            navigate("/coach-dashboard");
-          } else if (roleData.role === "subscriber") {
-            navigate("/subscriber-dashboard");
-          }
+        const roles = (rolesData ?? []).map((r: any) => r.role);
+        const role = roles.includes("admin")
+          ? "admin"
+          : roles.includes("coach")
+          ? "coach"
+          : roles.includes("subscriber")
+          ? "subscriber"
+          : null;
+
+        if (role === "admin") {
+          navigate("/admin-dashboard");
+        } else if (role === "coach") {
+          navigate("/coach-dashboard");
+        } else if (role === "subscriber") {
+          navigate("/subscriber-dashboard");
         }
       }
     };
