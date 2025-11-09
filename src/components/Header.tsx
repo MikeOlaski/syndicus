@@ -45,14 +45,24 @@ const Header = () => {
   }, []);
 
   const loadUserRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .single();
-    
-    if (data) {
-      setUserRole(data.role);
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error loading user role:", error);
+        return;
+      }
+      
+      if (data) {
+        console.log("User role loaded:", data.role);
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error("Exception loading user role:", error);
     }
   };
 
@@ -146,25 +156,23 @@ const Header = () => {
                 <>
                   <DropdownMenuLabel>
                     <div className="font-medium">{user.email}</div>
-                    <div className="text-xs font-normal text-muted-foreground mt-1">
-                      {userRole === "admin" ? "Administrator" : userRole === "coach" ? "Coach" : "Subscriber"}
+                    <div className="text-xs font-normal text-muted-foreground mt-1 capitalize">
+                      {userRole === "admin" ? "Admin" : userRole || "Loading..."}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {userRole && (
-                    <DropdownMenuItem onClick={() => {
-                      if (userRole === 'coach') {
-                        navigate('/coach-dashboard');
-                      } else if (userRole === 'subscriber') {
-                        navigate('/subscriber-dashboard');
-                      } else if (userRole === 'admin') {
-                        navigate('/admin-dashboard');
-                      }
-                    }}>
-                      <Briefcase className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem onClick={() => {
+                    if (userRole === 'admin') {
+                      navigate('/admin-dashboard');
+                    } else if (userRole === 'coach') {
+                      navigate('/coach-dashboard');
+                    } else if (userRole === 'subscriber') {
+                      navigate('/subscriber-dashboard');
+                    }
+                  }}>
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/help")}>
                     <HelpCircle className="w-4 h-4 mr-2" />
                     Help & Support
