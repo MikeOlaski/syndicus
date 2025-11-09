@@ -7,7 +7,8 @@ import {
   Settings, 
   LogOut,
   Crown,
-  Briefcase
+  Briefcase,
+  MessagesSquare
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +51,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     { title: "Dashboard", url: "/coach-dashboard", icon: LayoutDashboard },
     { title: "AI Assistant", url: "/coach-dashboard/chat", icon: MessageSquare },
     { title: "My Twin", url: "/coach-dashboard/my-twin", icon: User },
+    { title: "Conversations", url: "/coach-dashboard/conversations", icon: MessagesSquare },
     { title: "My Subscribers", url: "/coach-dashboard/subscribers", icon: Users },
     { title: "Profile", url: "/coach-dashboard/profile", icon: User },
   ];

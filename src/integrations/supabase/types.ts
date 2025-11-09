@@ -41,6 +41,38 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_profiles: {
         Row: {
           bio: string | null
@@ -80,6 +112,30 @@ export type Database = {
           total_sessions?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          title: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
         }
         Relationships: []
       }
