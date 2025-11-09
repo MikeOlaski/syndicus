@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ExpertAdvisorChat from "./ExpertAdvisorChat";
+import VideoPlayerModal from "./VideoPlayerModal";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdvisor, setShowAdvisor] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   const scrollToCoaches = () => {
     const coachSection = document.querySelector('#coach-directory');
@@ -73,7 +75,7 @@ const Hero = () => {
               Browse All Coaches
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/auth')}>
+            <Button size="lg" variant="outline" onClick={() => setShowVideoModal(true)}>
               Watch Demo
             </Button>
           </div>
@@ -89,6 +91,11 @@ const Hero = () => {
           }}
         />
       )}
+
+      <VideoPlayerModal
+        isOpen={showVideoModal}
+        onClose={() => setShowVideoModal(false)}
+      />
     </>
   );
 };
