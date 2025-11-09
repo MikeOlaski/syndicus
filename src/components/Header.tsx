@@ -74,16 +74,16 @@ const Header = () => {
           </a>
           
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#about" className="text-sm font-medium hover:text-primary transition-colors">
+            <a href="/about" className="text-sm font-medium hover:text-primary transition-colors">
               About
             </a>
-            <a href="#coaches" className="text-sm font-medium hover:text-primary transition-colors">
+            <a href="/coaches" className="text-sm font-medium hover:text-primary transition-colors">
               Coaches
             </a>
-            <a href="#syndicai" className="text-sm font-medium hover:text-primary transition-colors">
-              SyndicAI
+            <a href="/syndic8" className="text-sm font-medium hover:text-primary transition-colors">
+              Syndic8
             </a>
-            <a href="#create" className="text-sm font-medium hover:text-primary transition-colors">
+            <a href="/create-claim" className="text-sm font-medium hover:text-primary transition-colors">
               Create or Claim
             </a>
           </nav>
