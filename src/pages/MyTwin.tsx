@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { Upload, FileText, Trash2, Plus } from "lucide-react";
+import { Upload, FileText, Trash2, Plus, Youtube, Mic, Instagram, BookOpen, Archive, HardDrive, Database, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface KnowledgeAsset {
@@ -21,10 +22,23 @@ interface KnowledgeAsset {
 const MyTwin = () => {
   const [assets, setAssets] = useState<KnowledgeAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const { toast } = useToast();
+
+  const assetTypes = [
+    { id: "youtube", label: "YouTube Channel", icon: Youtube, color: "text-red-500" },
+    { id: "podcast", label: "Podcast", icon: Mic, color: "text-purple-500" },
+    { id: "instagram", label: "Instagram Account", icon: Instagram, color: "text-pink-500" },
+    { id: "pdf", label: "Upload PDF", icon: FileText, color: "text-blue-500" },
+    { id: "archive", label: "Upload Archive", icon: Archive, color: "text-orange-500" },
+    { id: "book", label: "Upload Book", icon: BookOpen, color: "text-green-500" },
+    { id: "gdrive", label: "Connect Google Drive", icon: HardDrive, color: "text-yellow-500" },
+    { id: "rag", label: "Connect RAG (Supabase)", icon: Database, color: "text-emerald-500" },
+    { id: "agent", label: "Connect Agent", icon: Bot, color: "text-indigo-500" },
+  ];
 
   useEffect(() => {
     fetchAssets();
@@ -55,6 +69,10 @@ const MyTwin = () => {
     }
   };
 
+  const handleSelectAssetType = (typeId: string) => {
+    setSelectedAssetType(typeId);
+  };
+
   const handleAddAsset = async () => {
     if (!title.trim() || !content.trim()) {
       toast({
@@ -75,7 +93,7 @@ const MyTwin = () => {
           coach_id: user.id,
           title,
           content,
-          file_type: "text",
+          file_type: selectedAssetType || "text",
         });
 
       if (error) throw error;
@@ -87,7 +105,8 @@ const MyTwin = () => {
 
       setTitle("");
       setContent("");
-      setShowAddForm(false);
+      setSelectedAssetType(null);
+      setShowAddModal(false);
       fetchAssets();
     } catch (error) {
       console.error("Error adding asset:", error);
@@ -133,49 +152,89 @@ const MyTwin = () => {
               Build your AI knowledge base by adding content and documents
             </p>
           </div>
-          <Button onClick={() => setShowAddForm(!showAddForm)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Asset
-          </Button>
-        </div>
+          <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Asset
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] bg-background">
+              <DialogHeader>
+                <DialogTitle>Add Asset to Knowledge Base</DialogTitle>
+                <DialogDescription>
+                  Choose the type of asset you want to add to your digital twin
+                </DialogDescription>
+              </DialogHeader>
 
-        {showAddForm && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Add New Asset</CardTitle>
-              <CardDescription>
-                Add text content to train your digital twin
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., My coaching philosophy"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  placeholder="Enter the content here..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={8}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleAddAsset}>Save Asset</Button>
-                <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              {!selectedAssetType ? (
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  {assetTypes.map((type) => (
+                    <Button
+                      key={type.id}
+                      variant="outline"
+                      className="h-24 flex flex-col items-center justify-center gap-2 hover:bg-accent"
+                      onClick={() => handleSelectAssetType(type.id)}
+                    >
+                      <type.icon className={`w-8 h-8 ${type.color}`} />
+                      <span className="text-sm font-medium">{type.label}</span>
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4 py-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedAssetType(null)}
+                    >
+                      ← Back
+                    </Button>
+                    <span>
+                      Adding: {assetTypes.find(t => t.id === selectedAssetType)?.label}
+                    </span>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., My coaching philosophy"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="content">Content / URL</Label>
+                    <Textarea
+                      id="content"
+                      placeholder="Enter the content or URL here..."
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      rows={8}
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddAsset}>Save Asset</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedAssetType(null);
+                        setTitle("");
+                        setContent("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <div className="grid gap-4">
           {isLoading ? (
