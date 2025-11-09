@@ -7,6 +7,29 @@ import { useState } from "react";
 import { Link2, Plus, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const claimSchema = z.object({
+  botUrl: z.string()
+    .trim()
+    .min(1, "PersonaBot URL is required")
+    .max(500, "URL must be less than 500 characters")
+    .url("Invalid URL format")
+    .refine((url) => url.includes("syndic.us"), "URL must be a syndic.us domain"),
+  fullName: z.string()
+    .trim()
+    .min(1, "Full name is required")
+    .max(100, "Name must be less than 100 characters"),
+  email: z.string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  phone: z.string()
+    .trim()
+    .max(20, "Phone number must be less than 20 characters")
+    .optional()
+    .or(z.literal(""))
+});
 
 const CreateClaim = () => {
   const [activeTab, setActiveTab] = useState<"claim" | "create">("claim");
@@ -14,6 +37,26 @@ const CreateClaim = () => {
 
   const handleSubmitClaim = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      botUrl: formData.get("bot-url") as string,
+      fullName: formData.get("full-name") as string,
+      email: formData.get("email") as string,
+      phone: formData.get("phone") as string,
+    };
+    
+    const result = claimSchema.safeParse(data);
+    
+    if (!result.success) {
+      toast({
+        title: "Validation Error",
+        description: result.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Claim Request Submitted",
       description: "We'll verify your identity and get back to you within 24-48 hours.",
@@ -86,7 +129,9 @@ const CreateClaim = () => {
                       <Label htmlFor="bot-url">PersonaBot URL *</Label>
                       <Input
                         id="bot-url"
+                        name="bot-url"
                         placeholder="https://syndic.us/coach/your-name"
+                        maxLength={500}
                         required
                       />
                       <p className="text-xs text-muted-foreground">
@@ -99,7 +144,9 @@ const CreateClaim = () => {
                         <Label htmlFor="full-name">Full Name *</Label>
                         <Input
                           id="full-name"
+                          name="full-name"
                           placeholder="John Doe"
+                          maxLength={100}
                           required
                         />
                       </div>
@@ -108,8 +155,10 @@ const CreateClaim = () => {
                         <Label htmlFor="email">Email Address *</Label>
                         <Input
                           id="email"
+                          name="email"
                           type="email"
                           placeholder="john@example.com"
+                          maxLength={255}
                           required
                         />
                       </div>
@@ -119,8 +168,10 @@ const CreateClaim = () => {
                       <Label htmlFor="phone">Phone Number (Optional)</Label>
                       <Input
                         id="phone"
+                        name="phone"
                         type="tel"
                         placeholder="+1 (555) 123-4567"
+                        maxLength={20}
                       />
                     </div>
 
