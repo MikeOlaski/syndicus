@@ -32,7 +32,7 @@ const CoachProfile = () => {
       {/* Header */}
       <header className="border-b bg-background sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-md bg-gradient-primary flex items-center justify-center">
               <MessageCircle className="w-5 h-5 text-white" />
             </div>
@@ -40,7 +40,7 @@ const CoachProfile = () => {
               <h1 className="font-bold text-lg">Syndic.us</h1>
               <p className="text-xs text-muted-foreground">Syndicated Digital Twin PersonaBots</p>
             </div>
-          </div>
+          </a>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="/" className="hover:text-primary">About</a>
             <a href="/coaches" className="hover:text-primary">Coaches</a>
