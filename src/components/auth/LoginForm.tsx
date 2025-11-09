@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string()
+    .trim()
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  password: z.string()
+    .min(1, "Password is required")
+    .max(255, "Password must be less than 255 characters"),
+});
 
 interface LoginFormProps {
   role: "subscriber" | "coach";
@@ -23,9 +34,26 @@ export const LoginForm = ({ role }: LoginFormProps) => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Validate inputs
+      const validationResult = loginSchema.safeParse({
         email,
         password,
+      });
+
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: validationResult.data.email,
+        password: validationResult.data.password,
       });
 
       if (error) throw error;
@@ -83,6 +111,7 @@ export const LoginForm = ({ role }: LoginFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          maxLength={255}
         />
       </div>
 
@@ -95,6 +124,7 @@ export const LoginForm = ({ role }: LoginFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          maxLength={255}
         />
       </div>
 
