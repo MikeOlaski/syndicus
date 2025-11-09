@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
-import { DollarSign, Users, Clock, TrendingUp, Calendar, Video, Globe, BarChart3 } from "lucide-react";
+import { DollarSign, Users, Clock, TrendingUp, Calendar, Video, Globe, BarChart3, MessageCircle } from "lucide-react";
+import VideoPlayerModal from "@/components/VideoPlayerModal";
+import { useState } from "react";
 
 const Coaches = () => {
   const navigate = useNavigate();
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -250,24 +253,40 @@ const Coaches = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-cta">
+      <section className="py-20 px-4 bg-gradient-to-br from-primary via-primary/90 to-primary/70">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Have Questions?
           </h2>
-          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-white/90 mb-12 max-w-2xl mx-auto">
             Our team is here to help you understand how AI can transform your coaching practice.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-white/90">
-              📅 Schedule Demo Call
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button 
+              size="lg" 
+              className="bg-white text-primary hover:bg-white/90 w-full sm:w-auto shadow-lg"
+              onClick={() => setShowVideoModal(true)}
+            >
+              <Calendar className="w-5 h-5 mr-2" />
+              Schedule Demo Call
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-              💬 Chat with Support
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="bg-white/10 text-white border-white/30 hover:bg-white/20 backdrop-blur-sm w-full sm:w-auto"
+              onClick={() => navigate("/contact")}
+            >
+              <MessageCircle className="w-5 h-5 mr-2" />
+              Contact Support
             </Button>
           </div>
         </div>
       </section>
+
+      <VideoPlayerModal
+        isOpen={showVideoModal}
+        onClose={() => setShowVideoModal(false)}
+      />
 
       <Footer />
     </div>
