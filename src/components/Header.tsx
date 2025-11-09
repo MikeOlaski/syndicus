@@ -16,25 +16,28 @@ const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check current session
+    // Listen for auth changes FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        // Defer database calls to prevent deadlock
+        if (session?.user) {
+          setTimeout(() => {
+            loadUserRole(session.user.id);
+          }, 0);
+        } else {
+          setUserRole(null);
+        }
+      }
+    );
+
+    // THEN check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadUserRole(session.user.id);
       }
     });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          loadUserRole(session.user.id);
-        } else {
-          setUserRole(null);
-        }
-      }
-    );
 
     return () => subscription.unsubscribe();
   }, []);
