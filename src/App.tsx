@@ -10,6 +10,8 @@ import Coaches from "./pages/Coaches";
 import Syndic8 from "./pages/Syndic8";
 import CreateClaim from "./pages/CreateClaim";
 import CoachDashboard from "./pages/CoachDashboard";
+import SubscriberDashboard from "./pages/SubscriberDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import CoachProfile from "./pages/CoachProfile";
 import ChatHome from "./pages/ChatHome";
 import ChatActive from "./pages/ChatActive";
@@ -37,6 +39,8 @@ const App = () => (
           <Route path="/syndic8" element={<Syndic8 />} />
           <Route path="/create-claim" element={<CreateClaim />} />
           <Route path="/coach-dashboard" element={<CoachDashboard />} />
+          <Route path="/subscriber-dashboard" element={<SubscriberDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/coach/:coachId" element={<CoachProfile />} />
           <Route path="/coach/:coachId/chat" element={<ChatHome />} />
           <Route path="/coach/:coachId/chat/active" element={<ChatActive />} />

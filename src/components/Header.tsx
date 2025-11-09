@@ -147,12 +147,20 @@ const Header = () => {
                   <DropdownMenuLabel>
                     <div className="font-medium">{user.email}</div>
                     <div className="text-xs font-normal text-muted-foreground mt-1">
-                      {userRole === "coach" ? "Coach" : "Subscriber"}
+                      {userRole === "admin" ? "Administrator" : userRole === "coach" ? "Coach" : "Subscriber"}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {userRole === "coach" && (
-                    <DropdownMenuItem onClick={() => navigate("/coach-dashboard")}>
+                  {userRole && (
+                    <DropdownMenuItem onClick={() => {
+                      if (userRole === 'coach') {
+                        navigate('/coach-dashboard');
+                      } else if (userRole === 'subscriber') {
+                        navigate('/subscriber-dashboard');
+                      } else if (userRole === 'admin') {
+                        navigate('/admin-dashboard');
+                      }
+                    }}>
                       <Briefcase className="w-4 h-4 mr-2" />
                       Dashboard
                     </DropdownMenuItem>
