@@ -6,12 +6,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, MessageSquare, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const contactSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  subject: z.string().trim().min(1, "Subject is required").max(200, "Subject must be less than 200 characters"),
+  message: z.string().trim().min(10, "Message must be at least 10 characters").max(2000, "Message must be less than 2000 characters")
+});
 
 const Contact = () => {
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      subject: formData.get("subject") as string,
+      message: formData.get("message") as string,
+    };
+    
+    const result = contactSchema.safeParse(data);
+    
+    if (!result.success) {
+      toast({
+        title: "Validation Error",
+        description: result.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Message sent!",
       description: "We'll get back to you within 24 hours.",
@@ -36,25 +64,46 @@ const Contact = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Your name" required />
+                <Input 
+                  id="name" 
+                  name="name"
+                  placeholder="Your name" 
+                  maxLength={100}
+                  required 
+                />
               </div>
               
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" required />
+                <Input 
+                  id="email" 
+                  name="email"
+                  type="email" 
+                  placeholder="your@email.com" 
+                  maxLength={255}
+                  required 
+                />
               </div>
               
               <div>
                 <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" placeholder="How can we help?" required />
+                <Input 
+                  id="subject" 
+                  name="subject"
+                  placeholder="How can we help?" 
+                  maxLength={200}
+                  required 
+                />
               </div>
               
               <div>
                 <Label htmlFor="message">Message</Label>
                 <Textarea 
                   id="message" 
+                  name="message"
                   placeholder="Tell us more about your inquiry..." 
                   rows={6}
+                  maxLength={2000}
                   required 
                 />
               </div>
