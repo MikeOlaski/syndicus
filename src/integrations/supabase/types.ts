@@ -82,7 +82,9 @@ export type Database = {
           id: string
           is_claimed: boolean | null
           is_verified: boolean | null
+          personality: string | null
           rating: number | null
+          specialization: string | null
           total_sessions: number | null
           updated_at: string
           user_id: string
@@ -95,7 +97,9 @@ export type Database = {
           id?: string
           is_claimed?: boolean | null
           is_verified?: boolean | null
+          personality?: string | null
           rating?: number | null
+          specialization?: string | null
           total_sessions?: number | null
           updated_at?: string
           user_id: string
@@ -108,7 +112,9 @@ export type Database = {
           id?: string
           is_claimed?: boolean | null
           is_verified?: boolean | null
+          personality?: string | null
           rating?: number | null
+          specialization?: string | null
           total_sessions?: number | null
           updated_at?: string
           user_id?: string
