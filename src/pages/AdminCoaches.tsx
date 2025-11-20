@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CoachImporter } from "@/components/admin/CoachImporter";
 
 interface Coach {
   id: string;
@@ -134,6 +135,9 @@ const AdminCoaches = () => {
               </p>
             </div>
           </div>
+
+          {/* Import Section */}
+          <CoachImporter onImportComplete={fetchCoaches} />
 
           {/* Search Bar */}
           <div className="relative max-w-md">
