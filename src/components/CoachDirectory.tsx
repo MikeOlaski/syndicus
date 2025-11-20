@@ -24,8 +24,10 @@ const CoachDirectory = () => {
   const [filteredCoaches, setFilteredCoaches] = useState(coaches);
 
   useEffect(() => {
-    setFilteredCoaches(coaches);
-  }, [coaches]);
+    if (coaches.length > 0 && filteredCoaches.length === 0) {
+      setFilteredCoaches(coaches);
+    }
+  }, [coaches, filteredCoaches.length]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
