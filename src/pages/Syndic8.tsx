@@ -44,6 +44,163 @@ const Syndic8 = () => {
         </div>
       </section>
 
+      {/* Cohort of Experts Section */}
+      <section className="py-20 px-4 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <Badge className="mb-4" variant="outline">
+              <Network className="w-3 h-3 mr-2" />
+              Mixture of Experts
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Create Your Own <span className="bg-gradient-primary bg-clip-text text-transparent">Expert Cohort</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Don't limit yourself to a single perspective. Build a custom team of AI coaches who collaborate, 
+              debate, and deliver comprehensive insights tailored to your unique challenges.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+            <div>
+              <h3 className="text-2xl font-bold mb-6">The Power of Collaborative Intelligence</h3>
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Multiple Perspectives</h4>
+                    <p className="text-muted-foreground">
+                      Combine specialists from different domains - leadership, wellness, strategy - to see 
+                      your challenge from every angle.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <MessageCircle className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Collaborative Dialogue</h4>
+                    <p className="text-muted-foreground">
+                      Watch as your expert cohort engages in dynamic discussions, building on each other's 
+                      insights to uncover breakthrough solutions.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Adversarial Thinking</h4>
+                    <p className="text-muted-foreground">
+                      Benefit from constructive debate where coaches challenge assumptions and stress-test 
+                      ideas, ensuring robust, well-rounded advice.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Blended Expertise</h4>
+                    <p className="text-muted-foreground">
+                      Get recommendations that blend methodologies from different coaching philosophies, 
+                      creating a unique approach perfectly suited to your needs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-background border rounded-2xl p-8 shadow-lg">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0">
+                    LC
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm mb-1">Leadership Coach</div>
+                    <p className="text-sm text-muted-foreground">
+                      "I recommend focusing on team alignment first. Build trust before pushing for performance."
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground font-bold text-sm flex-shrink-0">
+                    SC
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm mb-1">Strategy Coach</div>
+                    <p className="text-sm text-muted-foreground">
+                      "I see the merit in that, but we should also establish clear KPIs to measure progress quickly."
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-accent-foreground font-bold text-sm flex-shrink-0">
+                    WC
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm mb-1">Wellness Coach</div>
+                    <p className="text-sm text-muted-foreground">
+                      "Both valid points. Let's not forget sustainable pace - burnout will derail any strategy."
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bot className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">Synthesized Recommendation</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    "Create a 3-phase approach: Start with team alignment workshops, implement measurable KPIs 
+                    in phase 2, and build in wellness checkpoints throughout to ensure sustainable growth."
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-primary rounded-2xl p-8 md:p-12 text-center text-primary-foreground">
+            <h3 className="text-2xl md:text-3xl font-bold mb-4">
+              Why Settle for One Opinion?
+            </h3>
+            <p className="text-lg opacity-90 mb-8 max-w-3xl mx-auto">
+              Traditional coaching gives you one perspective. Syndic8 gives you a council of experts who work 
+              together to solve your toughest challenges. It's like having a board of advisors, available 24/7, 
+              at a fraction of the cost.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-background/10 backdrop-blur rounded-lg p-6">
+                <div className="text-3xl font-bold mb-2">10x</div>
+                <div className="text-sm opacity-90">More Comprehensive</div>
+              </div>
+              <div className="bg-background/10 backdrop-blur rounded-lg p-6">
+                <div className="text-3xl font-bold mb-2">24/7</div>
+                <div className="text-sm opacity-90">Always Available</div>
+              </div>
+              <div className="bg-background/10 backdrop-blur rounded-lg p-6">
+                <div className="text-3xl font-bold mb-2">1/10</div>
+                <div className="text-sm opacity-90">The Cost</div>
+              </div>
+            </div>
+            <Button size="lg" variant="secondary" onClick={() => navigate('/auth')}>
+              Start Building Your Cohort
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
