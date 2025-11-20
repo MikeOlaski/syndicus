@@ -21,36 +21,52 @@ export const useCoaches = () => {
   return useQuery({
     queryKey: ["coaches"],
     queryFn: async () => {
-      const { data: coachProfiles, error } = await supabase
+      const { data: coachProfiles, error: coachError } = await supabase
         .from("coach_profiles")
-        .select(`
-          *,
-          profiles (
-            id,
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
+        .select("*")
         .eq("is_verified", true)
         .order("rating", { ascending: false });
 
-      if (error) throw error;
+      if (coachError) throw coachError;
+
+      const userIds = (coachProfiles ?? []).map((coach) => coach.user_id);
+
+      let profilesById = new Map<
+        string,
+        { id: string; full_name: string | null; email: string; avatar_url: string | null }
+      >();
+
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, avatar_url")
+          .in("id", userIds);
+
+        if (profilesError) throw profilesError;
+
+        profilesById = new Map(
+          (profiles ?? []).map((profile) => [profile.id, profile])
+        );
+      }
 
       return (coachProfiles || []).map((coach, index): Coach => {
-        const profile = Array.isArray(coach.profiles) ? coach.profiles[0] : coach.profiles;
+        const profile = profilesById.get(coach.user_id);
         
         return {
           id: coach.user_id,
           name: profile?.full_name || "Coach",
           email: profile?.email || "",
           specialization: coach.specialization || "General Coaching",
-          rating: coach.rating || 4.5,
+          rating: Number(coach.rating ?? 4.5),
           clients: coach.total_sessions || 0,
-          description: coach.bio || "Experienced coach dedicated to helping clients achieve their goals.",
+          description:
+            coach.bio ||
+            "Experienced coach dedicated to helping clients achieve their goals.",
           personality: coach.personality || "Professional and supportive",
           tags: coach.expertise || ["Coaching"],
-          image: profile?.avatar_url || `https://images.unsplash.com/photo-${1500000000000 + index}?w=400&h=400&fit=crop`,
+          image:
+            profile?.avatar_url ||
+            `https://images.unsplash.com/photo-${1500000000000 + index}?w=400&h=400&fit=crop`,
           variant: index % 3 === 0 ? "primary" : "secondary",
           hourlyRate: coach.hourly_rate || undefined,
           isVerified: coach.is_verified || false,
