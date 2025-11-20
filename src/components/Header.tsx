@@ -118,6 +118,9 @@ const Header = () => {
           <a href="/coaches" className="text-sm font-medium hover:text-primary transition-colors">
             Coaches
           </a>
+          <a href="/directory" className="text-sm font-medium hover:text-primary transition-colors">
+            Directory
+          </a>
           <a href="/syndic8" className="text-sm font-medium hover:text-primary transition-colors">
             Syndic8
           </a>
