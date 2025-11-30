@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { RoleSelection } from "@/components/auth/RoleSelection";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import Header from "@/components/Header";
 
 type UserRole = "subscriber" | "coach" | null;
 
 const Auth = () => {
   const [signupRole, setSignupRole] = useState<UserRole>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleRoleSelect = (role: UserRole) => {
     setSignupRole(role);
@@ -35,15 +36,24 @@ const Auth = () => {
           </div>
 
           <Card className="p-6">
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+            {showForgotPassword ? (
+              <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />
+            ) : (
+              <Tabs defaultValue="login" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="login">
-                <LoginForm />
-              </TabsContent>
+                <TabsContent value="login">
+                  <LoginForm />
+                  <button
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-muted-foreground hover:text-foreground mt-4 text-center w-full"
+                  >
+                    Forgot password?
+                  </button>
+                </TabsContent>
 
               <TabsContent value="signup">
                 {!signupRole ? (
@@ -65,7 +75,8 @@ const Auth = () => {
                   </div>
                 )}
               </TabsContent>
-            </Tabs>
+              </Tabs>
+            )}
           </Card>
         </div>
       </div>
