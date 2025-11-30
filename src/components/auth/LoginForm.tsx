@@ -18,11 +18,7 @@ const loginSchema = z.object({
     .max(255, "Password must be less than 255 characters"),
 });
 
-interface LoginFormProps {
-  role: "subscriber" | "coach";
-}
-
-export const LoginForm = ({ role }: LoginFormProps) => {
+export const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +54,7 @@ export const LoginForm = ({ role }: LoginFormProps) => {
 
       if (error) throw error;
 
-      // Check if user has the correct role
+      // Query user roles
       const { data: userRoles, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
@@ -66,13 +62,21 @@ export const LoginForm = ({ role }: LoginFormProps) => {
 
       if (roleError) throw roleError;
 
-      const hasRole = userRoles?.some((r) => r.role === role);
+      // Determine the highest priority role: Admin > Coach > Subscriber
+      const roles = (userRoles ?? []).map((r) => r.role);
+      const userRole = roles.includes("admin")
+        ? "admin"
+        : roles.includes("coach")
+        ? "coach"
+        : roles.includes("subscriber")
+        ? "subscriber"
+        : null;
 
-      if (!hasRole) {
+      if (!userRole) {
         await supabase.auth.signOut();
         toast({
           title: "Access denied",
-          description: `This account is not registered as a ${role}.`,
+          description: "No valid role found for this account.",
           variant: "destructive",
         });
         return;
@@ -83,11 +87,13 @@ export const LoginForm = ({ role }: LoginFormProps) => {
         description: "You've successfully logged in.",
       });
 
-      // Redirect based on role
-      if (role === "coach") {
+      // Redirect based on role hierarchy
+      if (userRole === "admin") {
+        navigate("/admin-dashboard");
+      } else if (userRole === "coach") {
         navigate("/coach-dashboard");
       } else {
-        navigate("/");
+        navigate("/subscriber-dashboard");
       }
     } catch (error: any) {
       toast({
@@ -130,7 +136,7 @@ export const LoginForm = ({ role }: LoginFormProps) => {
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Login as {role === "coach" ? "Coach" : "Subscriber"}
+        Login
       </Button>
     </form>
   );

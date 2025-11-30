@@ -10,15 +10,14 @@ import Header from "@/components/Header";
 type UserRole = "subscriber" | "coach" | null;
 
 const Auth = () => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>(null);
-  const navigate = useNavigate();
+  const [signupRole, setSignupRole] = useState<UserRole>(null);
 
   const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
+    setSignupRole(role);
   };
 
   const handleBackToRoleSelection = () => {
-    setSelectedRole(null);
+    setSignupRole(null);
   };
 
   return (
@@ -31,39 +30,43 @@ const Auth = () => {
               Syndic.us
             </h1>
             <p className="text-muted-foreground">
-              {!selectedRole && "Choose your path to get started"}
-              {selectedRole === "subscriber" && "Access expert digital twins"}
-              {selectedRole === "coach" && "Create your digital twin"}
+              Access expert digital twins or create your own
             </p>
           </div>
 
-          {!selectedRole ? (
-            <RoleSelection onSelectRole={handleRoleSelect} />
-          ) : (
-            <Card className="p-6">
-              <button
-                onClick={handleBackToRoleSelection}
-                className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1"
-              >
-                ← Back to role selection
-              </button>
+          <Card className="p-6">
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
 
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                </TabsList>
+              <TabsContent value="login">
+                <LoginForm />
+              </TabsContent>
 
-                <TabsContent value="login">
-                  <LoginForm role={selectedRole} />
-                </TabsContent>
-
-                <TabsContent value="signup">
-                  <SignupForm role={selectedRole} />
-                </TabsContent>
-              </Tabs>
-            </Card>
-          )}
+              <TabsContent value="signup">
+                {!signupRole ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center mb-4">
+                      Choose your account type to get started
+                    </p>
+                    <RoleSelection onSelectRole={handleRoleSelect} />
+                  </div>
+                ) : (
+                  <div>
+                    <button
+                      onClick={handleBackToRoleSelection}
+                      className="text-sm text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1"
+                    >
+                      ← Back to role selection
+                    </button>
+                    <SignupForm role={signupRole} />
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </Card>
         </div>
       </div>
     </>
