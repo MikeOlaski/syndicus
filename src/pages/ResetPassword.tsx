@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,11 +28,43 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setSession(session);
+        }
+        setIsInitializing(false);
+      }
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsInitializing(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!session) {
+      toast({
+        title: "Session Error",
+        description: "No active session found. Please request a new password reset link.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -62,6 +95,8 @@ const ResetPassword = () => {
         description: "Your password has been successfully reset.",
       });
 
+      // Sign out and redirect to login
+      await supabase.auth.signOut();
       setTimeout(() => {
         navigate("/auth");
       }, 2000);
@@ -75,6 +110,43 @@ const ResetPassword = () => {
       setIsLoading(false);
     }
   };
+
+  if (isInitializing) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading reset session...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (!session) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <Card className="p-6">
+              <div className="text-center space-y-4">
+                <h2 className="text-2xl font-bold">Invalid or Expired Link</h2>
+                <p className="text-muted-foreground">
+                  This password reset link is invalid or has expired. Please request a new one.
+                </p>
+                <Button onClick={() => navigate("/auth")} className="w-full">
+                  Back to Login
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
