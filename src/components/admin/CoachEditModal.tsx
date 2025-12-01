@@ -1,0 +1,281 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, X } from "lucide-react";
+
+interface Coach {
+  id: string;
+  user_id: string;
+  bio: string | null;
+  hourly_rate: number | null;
+  is_verified: boolean;
+  is_claimed: boolean;
+  rating: number;
+  total_sessions: number;
+  expertise: string[] | null;
+  specialization: string | null;
+  personality: string | null;
+  status: string;
+  profiles: {
+    full_name: string | null;
+    email: string;
+    avatar_url: string | null;
+  };
+}
+
+interface CoachEditModalProps {
+  coach: Coach | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: () => void;
+}
+
+export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditModalProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [bio, setBio] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [personality, setPersonality] = useState("");
+  const [status, setStatus] = useState<"admin_setup" | "coach_claimed" | "onboarding_started" | "onboarding_completed" | "knowledge_base_setup" | "active" | "inactive">("admin_setup");
+  const [isVerified, setIsVerified] = useState(false);
+  const [expertiseInput, setExpertiseInput] = useState("");
+  const [expertise, setExpertise] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (coach) {
+      setFullName(coach.profiles.full_name || "");
+      setBio(coach.bio || "");
+      setHourlyRate(coach.hourly_rate?.toString() || "");
+      setSpecialization(coach.specialization || "");
+      setPersonality(coach.personality || "");
+      setStatus(coach.status as any || "admin_setup");
+      setIsVerified(coach.is_verified);
+      setExpertise(coach.expertise || []);
+    }
+  }, [coach]);
+
+  const handleAddExpertise = () => {
+    if (expertiseInput.trim() && !expertise.includes(expertiseInput.trim())) {
+      setExpertise([...expertise, expertiseInput.trim()]);
+      setExpertiseInput("");
+    }
+  };
+
+  const handleRemoveExpertise = (item: string) => {
+    setExpertise(expertise.filter(e => e !== item));
+  };
+
+  const handleSave = async () => {
+    if (!coach) return;
+    
+    setIsLoading(true);
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ full_name: fullName })
+        .eq("id", coach.user_id);
+
+      if (profileError) throw profileError;
+
+      // Update coach profile
+      const { error: coachError } = await supabase
+        .from("coach_profiles")
+        .update({
+          bio,
+          hourly_rate: hourlyRate ? parseFloat(hourlyRate) : null,
+          specialization,
+          personality,
+          status,
+          is_verified: isVerified,
+          expertise,
+          last_activity_at: new Date().toISOString(),
+        })
+        .eq("id", coach.id);
+
+      if (coachError) throw coachError;
+
+      toast({
+        title: "Success",
+        description: "Coach profile updated successfully",
+      });
+
+      onSave();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Error updating coach:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update coach profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const statusOptions = [
+    { value: "admin_setup", label: "Admin Setup" },
+    { value: "coach_claimed", label: "Coach Claimed" },
+    { value: "onboarding_started", label: "Onboarding Started" },
+    { value: "onboarding_completed", label: "Onboarding Completed" },
+    { value: "knowledge_base_setup", label: "Knowledge Base Setup" },
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+  ];
+
+  if (!coach) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Coach Profile</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Coach name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email (Read-only)</Label>
+            <Input
+              id="email"
+              value={coach.profiles.email}
+              disabled
+              className="bg-muted"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Account Status</Label>
+            <Select value={status} onValueChange={(value) => setStatus(value as any)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isVerified"
+              checked={isVerified}
+              onChange={(e) => setIsVerified(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <Label htmlFor="isVerified" className="cursor-pointer">
+              Verified Coach
+            </Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bio">Bio</Label>
+            <Textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Coach biography"
+              rows={4}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
+              <Input
+                id="hourlyRate"
+                type="number"
+                value={hourlyRate}
+                onChange={(e) => setHourlyRate(e.target.value)}
+                placeholder="150"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="specialization">Specialization</Label>
+              <Input
+                id="specialization"
+                value={specialization}
+                onChange={(e) => setSpecialization(e.target.value)}
+                placeholder="Executive Coaching"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="personality">Personality/Approach</Label>
+            <Textarea
+              id="personality"
+              value={personality}
+              onChange={(e) => setPersonality(e.target.value)}
+              placeholder="Describe coaching style and personality"
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Expertise Tags</Label>
+            <div className="flex gap-2">
+              <Input
+                value={expertiseInput}
+                onChange={(e) => setExpertiseInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddExpertise())}
+                placeholder="Add expertise tag"
+              />
+              <Button type="button" onClick={handleAddExpertise}>
+                Add
+              </Button>
+            </div>
+            {expertise.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {expertise.map((item, index) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {item}
+                    <X
+                      className="w-3 h-3 cursor-pointer"
+                      onClick={() => handleRemoveExpertise(item)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};

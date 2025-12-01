@@ -4,11 +4,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoachImporter } from "@/components/admin/CoachImporter";
+import { CoachEditModal } from "@/components/admin/CoachEditModal";
 
 interface Coach {
   id: string;
@@ -20,7 +22,11 @@ interface Coach {
   rating: number;
   total_sessions: number;
   expertise: string[] | null;
+  specialization: string | null;
+  personality: string | null;
+  status: string;
   created_at: string;
+  last_activity_at: string;
   profiles: {
     full_name: string | null;
     email: string;
@@ -33,6 +39,9 @@ const AdminCoaches = () => {
   const [filteredCoaches, setFilteredCoaches] = useState<Coach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,8 +49,10 @@ const AdminCoaches = () => {
   }, []);
 
   useEffect(() => {
+    let filtered = coaches;
+    
     if (searchQuery) {
-      const filtered = coaches.filter((coach) => {
+      filtered = filtered.filter((coach) => {
         const name = coach.profiles.full_name?.toLowerCase() || "";
         const email = coach.profiles.email.toLowerCase();
         const expertise = coach.expertise?.join(" ").toLowerCase() || "";
@@ -49,11 +60,14 @@ const AdminCoaches = () => {
         
         return name.includes(query) || email.includes(query) || expertise.includes(query);
       });
-      setFilteredCoaches(filtered);
-    } else {
-      setFilteredCoaches(coaches);
     }
-  }, [searchQuery, coaches]);
+    
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((coach) => coach.status === statusFilter);
+    }
+    
+    setFilteredCoaches(filtered);
+  }, [searchQuery, statusFilter, coaches]);
 
   const fetchCoaches = async () => {
     try {
@@ -120,6 +134,31 @@ const AdminCoaches = () => {
       .slice(0, 2);
   };
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case "active":
+        return "default";
+      case "inactive":
+        return "destructive";
+      case "admin_setup":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const handleEditCoach = (coach: Coach) => {
+    setSelectedCoach(coach);
+    setIsEditModalOpen(true);
+  };
+
   return (
     <DashboardLayout requiredRole="admin">
       <div className="container mx-auto px-6 py-8 max-w-7xl">
@@ -139,16 +178,36 @@ const AdminCoaches = () => {
           {/* Import Section */}
           <CoachImporter onImportComplete={fetchCoaches} />
 
-          {/* Search Bar */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search by name, email, or expertise..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          {/* Search and Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by name, email, or expertise..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="admin_setup">Admin Setup</SelectItem>
+                  <SelectItem value="coach_claimed">Coach Claimed</SelectItem>
+                  <SelectItem value="onboarding_started">Onboarding Started</SelectItem>
+                  <SelectItem value="onboarding_completed">Onboarding Completed</SelectItem>
+                  <SelectItem value="knowledge_base_setup">Knowledge Base Setup</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -290,6 +349,12 @@ const AdminCoaches = () => {
                 {/* Status Badges */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <Badge
+                    variant={getStatusBadgeVariant(coach.status)}
+                    className="text-xs font-medium"
+                  >
+                    {getStatusLabel(coach.status)}
+                  </Badge>
+                  <Badge
                     variant={coach.is_verified ? "default" : "secondary"}
                     className="text-xs"
                   >
@@ -322,18 +387,34 @@ const AdminCoaches = () => {
                 </div>
 
                 {/* Actions */}
-                <Button
-                  onClick={() => toggleVerification(coach.id, coach.is_verified)}
-                  variant={coach.is_verified ? "outline" : "default"}
-                  className="w-full"
-                  size="sm"
-                >
-                  {coach.is_verified ? "Unverify Coach" : "Verify Coach"}
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={() => handleEditCoach(coach)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => toggleVerification(coach.id, coach.is_verified)}
+                    variant={coach.is_verified ? "outline" : "default"}
+                    size="sm"
+                  >
+                    {coach.is_verified ? "Unverify" : "Verify"}
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
         )}
+
+        <CoachEditModal
+          coach={selectedCoach}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSave={fetchCoaches}
+        />
       </div>
     </DashboardLayout>
   );
