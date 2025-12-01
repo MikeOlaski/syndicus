@@ -82,9 +82,11 @@ export type Database = {
           id: string
           is_claimed: boolean | null
           is_verified: boolean | null
+          last_activity_at: string | null
           personality: string | null
           rating: number | null
           specialization: string | null
+          status: Database["public"]["Enums"]["coach_status"]
           total_sessions: number | null
           updated_at: string
           user_id: string
@@ -97,9 +99,11 @@ export type Database = {
           id?: string
           is_claimed?: boolean | null
           is_verified?: boolean | null
+          last_activity_at?: string | null
           personality?: string | null
           rating?: number | null
           specialization?: string | null
+          status?: Database["public"]["Enums"]["coach_status"]
           total_sessions?: number | null
           updated_at?: string
           user_id: string
@@ -112,9 +116,11 @@ export type Database = {
           id?: string
           is_claimed?: boolean | null
           is_verified?: boolean | null
+          last_activity_at?: string | null
           personality?: string | null
           rating?: number | null
           specialization?: string | null
+          status?: Database["public"]["Enums"]["coach_status"]
           total_sessions?: number | null
           updated_at?: string
           user_id?: string
@@ -306,6 +312,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "coach" | "subscriber"
+      coach_status:
+        | "admin_setup"
+        | "coach_claimed"
+        | "onboarding_started"
+        | "onboarding_completed"
+        | "knowledge_base_setup"
+        | "active"
+        | "inactive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -434,6 +448,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "coach", "subscriber"],
+      coach_status: [
+        "admin_setup",
+        "coach_claimed",
+        "onboarding_started",
+        "onboarding_completed",
+        "knowledge_base_setup",
+        "active",
+        "inactive",
+      ],
     },
   },
 } as const
