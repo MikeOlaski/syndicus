@@ -28,6 +28,8 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import Directory from "./pages/Directory";
+import CoachProfileSetup from "./pages/CoachProfileSetup";
+import CoachSubscribers from "./pages/CoachSubscribers";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,8 @@ const App = () => (
           <Route path="/coach-dashboard/chat" element={<ChatPage role="coach" />} />
           <Route path="/coach-dashboard/my-twin" element={<MyTwin />} />
           <Route path="/coach-dashboard/conversations" element={<Conversations />} />
+          <Route path="/coach-dashboard/profile" element={<CoachProfileSetup />} />
+          <Route path="/coach-dashboard/subscribers" element={<CoachSubscribers />} />
           <Route path="/subscriber-dashboard" element={<SubscriberDashboard />} />
           <Route path="/subscriber-dashboard/chat" element={<ChatPage role="subscriber" />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
