@@ -8,7 +8,8 @@ import {
   LogOut,
   Crown,
   Briefcase,
-  MessagesSquare
+  MessagesSquare,
+  Home
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,6 +119,19 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
 
       <SidebarFooter>
         <SidebarMenu>
+          {(userRole === "admin" || userRole === "coach") && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <button
+                  onClick={() => navigate("/")}
+                  className="w-full hover:bg-accent text-muted-foreground hover:text-foreground"
+                >
+                  <Home className="h-4 w-4" />
+                  {!collapsed && <span>Back to Syndic.us</span>}
+                </button>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <button
