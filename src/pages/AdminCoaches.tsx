@@ -73,22 +73,47 @@ const AdminCoaches = () => {
 
   const fetchCoaches = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch coach profiles first
+      const { data: coachProfiles, error: coachError } = await supabase
         .from("coach_profiles")
-        .select(`
-          *,
-          profiles!coach_profiles_user_id_fkey (
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      
-      setCoaches(data as any);
-      setFilteredCoaches(data as any);
+      if (coachError) throw coachError;
+
+      if (!coachProfiles || coachProfiles.length === 0) {
+        setCoaches([]);
+        setFilteredCoaches([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get unique user IDs
+      const userIds = coachProfiles.map(cp => cp.user_id);
+
+      // Fetch profiles for those user IDs
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, avatar_url")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map for quick lookup
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Combine the data
+      const combinedData = coachProfiles.map(cp => ({
+        ...cp,
+        profiles: profilesMap.get(cp.user_id) || {
+          full_name: null,
+          email: "Unknown",
+          avatar_url: null,
+        },
+      }));
+
+      setCoaches(combinedData as any);
+      setFilteredCoaches(combinedData as any);
     } catch (error) {
       console.error("Error fetching coaches:", error);
       toast({
