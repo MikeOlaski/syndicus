@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoachImporter } from "@/components/admin/CoachImporter";
 import { CoachEditModal } from "@/components/admin/CoachEditModal";
+import { CoachAddModal } from "@/components/admin/CoachAddModal";
 
 interface Coach {
   id: string;
@@ -42,6 +43,7 @@ const AdminCoaches = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -178,8 +180,8 @@ const AdminCoaches = () => {
           {/* Import Section */}
           <CoachImporter onImportComplete={fetchCoaches} />
 
-          {/* Search and Filter Bar */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search, Filter Bar, and Add Button */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -208,6 +210,10 @@ const AdminCoaches = () => {
                 </SelectContent>
               </Select>
             </div>
+            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              Add Coach
+            </Button>
           </div>
         </div>
 
@@ -414,6 +420,12 @@ const AdminCoaches = () => {
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           onSave={fetchCoaches}
+        />
+
+        <CoachAddModal
+          open={isAddModalOpen}
+          onOpenChange={setIsAddModalOpen}
+          onSuccess={fetchCoaches}
         />
       </div>
     </DashboardLayout>
