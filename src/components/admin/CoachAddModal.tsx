@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send, Bot, User, RotateCcw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { WEBHOOKS } from "@/config/webhooks";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "coach-add-chat-messages";
 
@@ -88,27 +88,21 @@ export const CoachAddModal = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch(WEBHOOKS.PERSONA_CHAT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const { data: response, error } = await supabase.functions.invoke('persona-chat', {
+        body: {
           message: userMessage,
           history: messages,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message);
       }
 
-      const data = await response.json();
-      
       // Handle response - adjust based on your webhook's response format
-      const assistantMessage = typeof data === "string" 
-        ? data 
-        : data.message || data.response || data.output || JSON.stringify(data);
+      const assistantMessage = typeof response === "string" 
+        ? response 
+        : response?.message || response?.response || response?.output || JSON.stringify(response);
 
       setMessages((prev) => [
         ...prev,
