@@ -13,8 +13,17 @@ import { Loader2, Send, Bot, User, RotateCcw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 
-const getStorageKey = (sessionId: string) => `coach-chat-${sessionId}`;
-const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+const STORAGE_KEY = "coach-chat-messages";
+const SESSION_KEY = "coach-chat-session-id";
+
+const getOrCreateSessionId = (): string => {
+  let sessionId = localStorage.getItem(SESSION_KEY);
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    localStorage.setItem(SESSION_KEY, sessionId);
+  }
+  return sessionId;
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -33,9 +42,10 @@ export const CoachAddModal = ({
   onSuccess,
 }: CoachAddModalProps) => {
   const { toast } = useToast();
+  const [sessionId] = useState(() => getOrCreateSessionId());
   const [messages, setMessages] = useState<Message[]>(() => {
-    // Load messages from localStorage by session ID
-    const saved = localStorage.getItem(getStorageKey(SESSION_ID));
+    // Load messages from localStorage
+    const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
   });
   const [input, setInput] = useState("");
@@ -47,7 +57,7 @@ export const CoachAddModal = ({
 
   // Subscribe to realtime broadcast for additional agent responses
   useEffect(() => {
-    const channel = supabase.channel(`agent-responses-${SESSION_ID}`);
+    const channel = supabase.channel(`agent-responses-${sessionId}`);
     
     channel
       .on("broadcast", { event: "agent-response" }, (payload) => {
@@ -69,11 +79,11 @@ export const CoachAddModal = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [sessionId]);
 
-  // Save messages to localStorage by session ID whenever they change
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem(getStorageKey(SESSION_ID), JSON.stringify(messages));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
   // Auto scroll to bottom when messages change
@@ -98,7 +108,8 @@ export const CoachAddModal = ({
   }, [open, scrollToBottom]);
 
   const handleNewChat = () => {
-    localStorage.removeItem(getStorageKey(SESSION_ID));
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SESSION_KEY);
     setMessages([]);
     setInput("");
     toast({
@@ -124,7 +135,7 @@ export const CoachAddModal = ({
         body: {
           message: userMessage,
           message_id: messageId,
-          session_id: SESSION_ID,
+          session_id: sessionId,
         },
       });
 
