@@ -14,9 +14,9 @@ serve(async (req) => {
   }
 
   try {
-    const { message, history, message_id, session_id } = await req.json();
+    const { message, message_id, session_id } = await req.json();
 
-    console.log("Sending to n8n webhook:", { message, message_id, session_id, historyLength: history?.length });
+    console.log("Sending to n8n webhook:", { message, message_id, session_id });
 
     // Build the endpoint URL for n8n to send additional responses
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -29,7 +29,6 @@ serve(async (req) => {
       },
       body: JSON.stringify({ 
         message, 
-        history,
         message_id,
         session_id,
         response_endpoint: agentResponseEndpoint,
