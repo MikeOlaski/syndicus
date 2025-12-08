@@ -1,6 +1,6 @@
 // Webhook configuration
-// URLs are loaded from environment variables for easy configuration
+// Change these URLs as needed without modifying component code
 
 export const WEBHOOKS = {
-  PERSONA_CHAT: import.meta.env.VITE_PERSONA_CHAT_WEBHOOK || "",
+  PERSONA_CHAT: "https://emjayoh.app.n8n.cloud/webhook/syndicus-persona-chat-trigger",
 } as const;
