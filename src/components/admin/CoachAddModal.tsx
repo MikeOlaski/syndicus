@@ -182,7 +182,7 @@ export const CoachAddModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col p-0 gap-0">
+      <DialogContent className="w-[90vw] max-w-[1000px] h-[85vh] max-h-[800px] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <div className="flex items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2">
