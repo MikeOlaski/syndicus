@@ -13,7 +13,7 @@ import { Loader2, Send, Bot, User, RotateCcw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 
-const STORAGE_KEY = "coach-add-chat-messages";
+const getStorageKey = (sessionId: string) => `coach-chat-${sessionId}`;
 const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
 interface Message {
@@ -34,8 +34,8 @@ export const CoachAddModal = ({
 }: CoachAddModalProps) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>(() => {
-    // Load messages from localStorage on initial render
-    const saved = localStorage.getItem(STORAGE_KEY);
+    // Load messages from localStorage by session ID
+    const saved = localStorage.getItem(getStorageKey(SESSION_ID));
     return saved ? JSON.parse(saved) : [];
   });
   const [input, setInput] = useState("");
@@ -71,9 +71,9 @@ export const CoachAddModal = ({
     };
   }, []);
 
-  // Save messages to localStorage whenever they change
+  // Save messages to localStorage by session ID whenever they change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    localStorage.setItem(getStorageKey(SESSION_ID), JSON.stringify(messages));
   }, [messages]);
 
   // Auto scroll to bottom when messages change
@@ -98,7 +98,7 @@ export const CoachAddModal = ({
   }, [open, scrollToBottom]);
 
   const handleNewChat = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey(SESSION_ID));
     setMessages([]);
     setInput("");
     toast({
@@ -119,10 +119,10 @@ export const CoachAddModal = ({
     currentMessageIdRef.current = messageId;
 
     try {
+      // Only send message and session_id - history is stored locally
       const { data: response, error } = await supabase.functions.invoke('persona-chat', {
         body: {
           message: userMessage,
-          history: messages,
           message_id: messageId,
           session_id: SESSION_ID,
         },
