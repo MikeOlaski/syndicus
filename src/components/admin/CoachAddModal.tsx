@@ -132,14 +132,31 @@ export const CoachAddModal = ({
         throw new Error(error.message);
       }
 
-      // Handle response - adjust based on your webhook's response format
-      const assistantMessage = typeof response === "string" 
-        ? response 
-        : response?.message || response?.response || response?.output || JSON.stringify(response);
+      // Handle response - supports single message or array of messages
+      let responses: string[] = [];
+      
+      if (Array.isArray(response)) {
+        // Array of responses from multiple webhook nodes
+        responses = response.map((r: any) => 
+          typeof r === "string" ? r : r?.message || r?.response || r?.output || JSON.stringify(r)
+        );
+      } else if (response?.responses && Array.isArray(response.responses)) {
+        // Object with responses array
+        responses = response.responses.map((r: any) => 
+          typeof r === "string" ? r : r?.message || r?.response || r?.output || JSON.stringify(r)
+        );
+      } else {
+        // Single response
+        const msg = typeof response === "string" 
+          ? response 
+          : response?.message || response?.response || response?.output || JSON.stringify(response);
+        responses = [msg];
+      }
 
+      // Add all responses as separate messages
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: assistantMessage },
+        ...responses.map((content) => ({ role: "assistant" as const, content })),
       ]);
     } catch (error: any) {
       console.error("Error sending message:", error);
