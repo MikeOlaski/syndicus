@@ -140,7 +140,7 @@ export const CoachAddModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] h-[80vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2">
               <Bot className="w-5 h-5 text-primary" />
               Create Coach via Chat
@@ -149,7 +149,7 @@ export const CoachAddModal = ({
               variant="outline"
               size="sm"
               onClick={handleNewChat}
-              className="gap-2"
+              className="gap-2 mr-6"
             >
               <RotateCcw className="w-4 h-4" />
               New Chat
