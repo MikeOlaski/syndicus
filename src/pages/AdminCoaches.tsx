@@ -6,12 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoachImporter } from "@/components/admin/CoachImporter";
 import { CoachEditModal } from "@/components/admin/CoachEditModal";
 import { CoachAddModal } from "@/components/admin/CoachAddModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Coach {
   id: string;
@@ -44,6 +54,9 @@ const AdminCoaches = () => {
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [coachToDelete, setCoachToDelete] = useState<Coach | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -184,6 +197,44 @@ const AdminCoaches = () => {
   const handleEditCoach = (coach: Coach) => {
     setSelectedCoach(coach);
     setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (coach: Coach) => {
+    setCoachToDelete(coach);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!coachToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      // Delete coach profile
+      const { error: coachError } = await supabase
+        .from("coach_profiles")
+        .delete()
+        .eq("id", coachToDelete.id);
+
+      if (coachError) throw coachError;
+
+      toast({
+        title: "Coach Deleted",
+        description: `${coachToDelete.profiles.full_name || "Coach"} has been permanently deleted.`,
+      });
+
+      setIsDeleteDialogOpen(false);
+      setCoachToDelete(null);
+      fetchCoaches();
+    } catch (error) {
+      console.error("Error deleting coach:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete coach. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -418,11 +469,12 @@ const AdminCoaches = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex gap-2">
                   <Button
                     onClick={() => handleEditCoach(coach)}
                     variant="outline"
                     size="sm"
+                    className="flex-1"
                   >
                     <Edit className="w-3 h-3 mr-1" />
                     Edit
@@ -431,8 +483,17 @@ const AdminCoaches = () => {
                     onClick={() => toggleVerification(coach.id, coach.is_verified)}
                     variant={coach.is_verified ? "outline" : "default"}
                     size="sm"
+                    className="flex-1"
                   >
                     {coach.is_verified ? "Unverify" : "Verify"}
+                  </Button>
+                  <Button
+                    onClick={() => handleDeleteClick(coach)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </Card>
@@ -452,6 +513,42 @@ const AdminCoaches = () => {
           onOpenChange={setIsAddModalOpen}
           onSuccess={fetchCoaches}
         />
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader className="space-y-4">
+              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+              </div>
+              <AlertDialogTitle className="text-center text-xl">
+                Delete Coach?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-center">
+                Are you sure you want to permanently delete{" "}
+                <span className="font-semibold text-foreground">
+                  {coachToDelete?.profiles.full_name || "this coach"}
+                </span>
+                ? This action cannot be undone and all associated data will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="sm:justify-center gap-3 mt-4">
+              <AlertDialogCancel 
+                disabled={isDeleting}
+                className="flex-1 sm:flex-initial"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex-1 sm:flex-initial bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete Permanently"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
