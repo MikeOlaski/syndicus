@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   Dialog,
@@ -9,9 +9,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Send, Bot, User, X } from "lucide-react";
+import { Loader2, Send, Bot, User, RotateCcw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WEBHOOKS } from "@/config/webhooks";
+
+const STORAGE_KEY = "coach-add-chat-messages";
 
 interface Message {
   role: "user" | "assistant";
@@ -30,33 +32,52 @@ export const CoachAddModal = ({
   onSuccess,
 }: CoachAddModalProps) => {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Load messages from localStorage on initial render
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Scroll to bottom when messages change
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
-  // Focus textarea when modal opens
-  useEffect(() => {
-    if (open && textareaRef.current) {
-      setTimeout(() => textareaRef.current?.focus(), 100);
+  // Auto scroll to bottom when messages change
+  const scrollToBottom = useCallback(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [open]);
+  }, []);
 
-  // Reset chat when modal closes
   useEffect(() => {
-    if (!open) {
-      setMessages([]);
-      setInput("");
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
+
+  // Focus textarea when modal opens and scroll to bottom
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        scrollToBottom();
+      }, 100);
     }
-  }, [open]);
+  }, [open, scrollToBottom]);
+
+  const handleNewChat = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setMessages([]);
+    setInput("");
+    toast({
+      title: "New conversation started",
+      description: "Previous chat has been cleared.",
+    });
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -124,6 +145,15 @@ export const CoachAddModal = ({
               <Bot className="w-5 h-5 text-primary" />
               Create Coach via Chat
             </DialogTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNewChat}
+              className="gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              New Chat
+            </Button>
           </div>
           <p className="text-sm text-muted-foreground">
             Chat with the AI assistant to create a new coach profile
@@ -201,6 +231,7 @@ export const CoachAddModal = ({
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
