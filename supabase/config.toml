@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.create-coach]
 verify_jwt = false
+
+[functions.agent-response]
+verify_jwt = false
