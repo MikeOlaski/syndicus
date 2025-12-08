@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "coach-add-chat-messages";
+const SESSION_ID = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
 interface Message {
   role: "user" | "assistant";
@@ -42,6 +43,33 @@ export const CoachAddModal = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const currentMessageIdRef = useRef<string | null>(null);
+
+  // Subscribe to realtime broadcast for additional agent responses
+  useEffect(() => {
+    const channel = supabase.channel(`agent-responses-${SESSION_ID}`);
+    
+    channel
+      .on("broadcast", { event: "agent-response" }, (payload) => {
+        console.log("Received broadcast:", payload);
+        const { message_id, response } = payload.payload;
+        
+        // Only process if it matches our current message or is a follow-up
+        if (response) {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: response },
+          ]);
+        }
+      })
+      .subscribe((status) => {
+        console.log("Broadcast channel status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -87,11 +115,16 @@ export const CoachAddModal = ({
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    currentMessageIdRef.current = messageId;
+
     try {
       const { data: response, error } = await supabase.functions.invoke('persona-chat', {
         body: {
           message: userMessage,
           history: messages,
+          message_id: messageId,
+          session_id: SESSION_ID,
         },
       });
 
