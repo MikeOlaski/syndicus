@@ -58,12 +58,76 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authorization
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Verify user is authenticated and has admin role
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    
+    if (userError || !user) {
+      console.error("User verification failed:", userError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !roleData) {
+      console.error("Admin role check failed:", roleError?.message || "No admin role found");
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Admin access required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Admin ${user.id} initiated coach import`);
+
     const { coaches }: { coaches: CoachData[] } = await req.json();
+
+    // Limit batch size to prevent abuse
+    if (!coaches || coaches.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No coaches provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (coaches.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Maximum 50 coaches per batch" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const results = [];
 
@@ -79,11 +143,25 @@ serve(async (req) => {
         continue;
       }
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(coach.email)) {
+        results.push({ 
+          name: coach.fullName, 
+          success: false, 
+          error: "Invalid email format" 
+        });
+        continue;
+      }
+
       try {
-        // Create auth user with temporary password
+        // Generate secure random password
+        const securePassword = crypto.randomUUID() + "Aa1!";
+
+        // Create auth user with secure password
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: coach.email,
-          password: `TempPass123!${i}`, // Temporary password
+          password: securePassword,
           email_confirm: true,
           user_metadata: {
             full_name: coach.fullName
@@ -163,6 +241,8 @@ serve(async (req) => {
       }
     }
 
+    console.log(`Import completed: ${results.filter(r => r.success).length} success, ${results.filter(r => !r.success).length} failed`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -174,6 +254,7 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
+    console.error("Import error:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
