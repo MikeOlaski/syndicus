@@ -91,6 +91,52 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const requestData: CreateCoachRequest = await req.json();
+
+    // Input validation
+    if (!requestData.email || typeof requestData.email !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Email is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(requestData.email) || requestData.email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!requestData.fullName || typeof requestData.fullName !== "string" || requestData.fullName.length < 2 || requestData.fullName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Full name is required (2-100 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate optional fields
+    if (requestData.bio && (typeof requestData.bio !== "string" || requestData.bio.length > 2000)) {
+      return new Response(
+        JSON.stringify({ error: "Bio must be less than 2000 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (requestData.hourlyRate !== undefined && (typeof requestData.hourlyRate !== "number" || requestData.hourlyRate < 0 || requestData.hourlyRate > 10000)) {
+      return new Response(
+        JSON.stringify({ error: "Hourly rate must be between 0 and 10000" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (requestData.expertise && (!Array.isArray(requestData.expertise) || requestData.expertise.length > 20)) {
+      return new Response(
+        JSON.stringify({ error: "Expertise must be an array with max 20 items" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     const {
       email,
       fullName,

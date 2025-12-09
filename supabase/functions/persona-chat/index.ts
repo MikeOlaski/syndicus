@@ -5,7 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const WEBHOOK_URL = "https://emjayoh.app.n8n.cloud/webhook/syndicus-persona-chat-trigger";
+// Get webhook URL from environment variable (secure)
+const WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL") || "";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,7 +15,46 @@ serve(async (req) => {
   }
 
   try {
-    const { message, message_id, session_id } = await req.json();
+    // Validate webhook URL is configured
+    if (!WEBHOOK_URL) {
+      console.error("N8N_WEBHOOK_URL environment variable not configured");
+      return new Response(
+        JSON.stringify({ error: "Webhook not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    const { message, message_id, session_id } = body;
+
+    // Input validation
+    if (!message || typeof message !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Message is required and must be a string" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (message.length > 10000) {
+      return new Response(
+        JSON.stringify({ error: "Message exceeds maximum length of 10000 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!session_id || typeof session_id !== "string" || session_id.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Valid session_id is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (message_id && (typeof message_id !== "string" || message_id.length > 100)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid message_id format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log("Sending to n8n webhook:", { message, message_id, session_id });
 

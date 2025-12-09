@@ -77,12 +77,14 @@ serve(async (req) => {
       );
     }
 
-    // Validate role
-    if (!["admin", "coach", "subscriber"].includes(role)) {
+    // Validate the role - admin cannot be self-assigned (must be assigned by existing admin)
+    const selfAssignableRoles = ['coach', 'subscriber'];
+    if (!selfAssignableRoles.includes(role)) {
+      console.error(`Attempted self-assignment of restricted role: ${role} by user ${userId}`);
       return new Response(
-        JSON.stringify({ error: "Invalid role" }),
+        JSON.stringify({ error: 'Invalid role for self-assignment. Admin role requires administrator approval.' }),
         {
-          status: 400,
+          status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
