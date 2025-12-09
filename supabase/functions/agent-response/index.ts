@@ -64,8 +64,45 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify user has admin role for bot creation actions
-    const { message_id, session_id, response, action, bot_name } = await req.json();
+    const body = await req.json();
+    const { message_id, session_id, response, action, bot_name } = body;
+
+    // Input validation
+    if (!session_id || typeof session_id !== "string" || session_id.length > 100) {
+      console.error("Invalid session_id provided");
+      return new Response(
+        JSON.stringify({ error: "Valid session_id is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!message_id || typeof message_id !== "string" || message_id.length > 100) {
+      return new Response(
+        JSON.stringify({ error: "Valid message_id is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!response || typeof response !== "string" || response.length > 50000) {
+      return new Response(
+        JSON.stringify({ error: "Response is required and must be less than 50000 characters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action && !["create-bot"].includes(action)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid action type" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (bot_name && (typeof bot_name !== "string" || bot_name.length > 100 || !/^[a-zA-Z0-9\s\-_]+$/.test(bot_name))) {
+      return new Response(
+        JSON.stringify({ error: "Invalid bot_name format. Use alphanumeric characters, spaces, hyphens, and underscores only." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log("Received agent response:", { 
       message_id, 
@@ -90,13 +127,6 @@ serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    }
-
-    if (!message_id || !session_id || !response) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: message_id, session_id, response" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     let coachCreated = false;
