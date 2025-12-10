@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MessageSquare, ExternalLink } from "lucide-react";
-import { CoachChatModal } from "@/components/admin/CoachChatModal";
+import { CoachChatModal } from "@/components/CoachChatModal";
 
 interface CoachCardProps {
   id: string;
