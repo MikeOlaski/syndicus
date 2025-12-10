@@ -160,8 +160,8 @@ const ChatActive = () => {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate(`/coach/${coachId}`)}
-              title="Back to profile"
+              onClick={() => navigate(`/coach/${coachId}/chat`)}
+              title="Back to chat home"
             >
               <Minimize2 className="w-4 h-4" />
             </Button>
