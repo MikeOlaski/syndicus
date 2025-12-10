@@ -20,6 +20,7 @@ interface CoachChatModalProps {
   coachBio: string | null;
   coachAvatar: string | null;
   webhookUrl: string;
+  coachId: string;
 }
 
 export const CoachChatModal = ({
@@ -29,12 +30,30 @@ export const CoachChatModal = ({
   coachBio,
   coachAvatar,
   webhookUrl,
+  coachId,
 }: CoachChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Generate or retrieve session ID from localStorage
+  const getOrCreateSessionId = () => {
+    const storageKey = `chat_session_${coachId}`;
+    let storedSessionId = localStorage.getItem(storageKey);
+    
+    if (!storedSessionId) {
+      // Generate a new session ID (hex format like in the screenshot)
+      storedSessionId = Array.from({ length: 32 }, () => 
+        Math.floor(Math.random() * 16).toString(16)
+      ).join('');
+      localStorage.setItem(storageKey, storedSessionId);
+    }
+    
+    return storedSessionId;
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,10 +63,12 @@ export const CoachChatModal = ({
 
   useEffect(() => {
     if (open) {
+      const sid = getOrCreateSessionId();
+      setSessionId(sid);
       setMessages([]);
       setInput("");
     }
-  }, [open]);
+  }, [open, coachId]);
 
   const generateId = () => Math.random().toString(36).substring(2, 15);
 
@@ -71,6 +92,8 @@ export const CoachChatModal = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          sessionId: sessionId,
+          action: "sendMessage",
           chatInput: userMessage.content,
         }),
       });
