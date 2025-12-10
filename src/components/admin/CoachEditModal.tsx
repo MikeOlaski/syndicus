@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, MessageCircle, Save } from "lucide-react";
+import { CoachChatModal } from "./CoachChatModal";
 
 interface Coach {
   id: string;
@@ -23,6 +24,7 @@ interface Coach {
   specialization: string | null;
   personality: string | null;
   status: string;
+  webhook_url?: string | null;
   profiles: {
     full_name: string | null;
     email: string;
@@ -39,6 +41,7 @@ interface CoachEditModalProps {
 
 export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingWebhook, setIsSavingWebhook] = useState(false);
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
@@ -48,6 +51,8 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
   const [isVerified, setIsVerified] = useState(false);
   const [expertiseInput, setExpertiseInput] = useState("");
   const [expertise, setExpertise] = useState<string[]>([]);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [chatModalOpen, setChatModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,6 +65,7 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
       setStatus(coach.status as any || "admin_setup");
       setIsVerified(coach.is_verified);
       setExpertise(coach.expertise || []);
+      setWebhookUrl(coach.webhook_url || "");
     }
   }, [coach]);
 
@@ -72,6 +78,46 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
 
   const handleRemoveExpertise = (item: string) => {
     setExpertise(expertise.filter(e => e !== item));
+  };
+
+  const handleSaveWebhook = async () => {
+    if (!coach) return;
+    
+    setIsSavingWebhook(true);
+    try {
+      const { error } = await supabase
+        .from("coach_profiles")
+        .update({ webhook_url: webhookUrl || null })
+        .eq("id", coach.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Webhook URL saved successfully",
+      });
+    } catch (error: any) {
+      console.error("Error saving webhook:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save webhook URL",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingWebhook(false);
+    }
+  };
+
+  const handleOpenChat = () => {
+    if (!webhookUrl.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a webhook URL first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setChatModalOpen(true);
   };
 
   const handleSave = async () => {
@@ -98,6 +144,7 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
           status,
           is_verified: isVerified,
           expertise,
+          webhook_url: webhookUrl || null,
           last_activity_at: new Date().toISOString(),
         })
         .eq("id", coach.id);
@@ -136,9 +183,10 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
   if (!coach) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
           <DialogTitle>Edit Coach Profile</DialogTitle>
         </DialogHeader>
 
@@ -264,6 +312,46 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
               </div>
             )}
           </div>
+          {/* Webhook URL Section */}
+          <div className="space-y-2 p-4 bg-muted/50 rounded-lg border">
+            <Label htmlFor="webhookUrl" className="text-base font-semibold">
+              n8n Webhook URL
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Connect this coach to an n8n chat agent workflow
+            </p>
+            <div className="flex gap-2">
+              <Input
+                id="webhookUrl"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://your-n8n-instance.com/webhook/..."
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveWebhook}
+                disabled={isSavingWebhook}
+              >
+                {isSavingWebhook ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                <span className="ml-2">Save</span>
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleOpenChat}
+                disabled={!webhookUrl.trim()}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="ml-2">Chat</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
@@ -277,5 +365,15 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <CoachChatModal
+      open={chatModalOpen}
+      onOpenChange={setChatModalOpen}
+      coachName={fullName || coach.profiles.full_name || "Coach"}
+      coachBio={bio}
+      coachAvatar={coach.profiles.avatar_url}
+      webhookUrl={webhookUrl}
+    />
+  </>
   );
 };
