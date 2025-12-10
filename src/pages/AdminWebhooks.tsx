@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Webhook, Save, Plus, Trash2, Loader2 } from "lucide-react";
+import { Webhook, Save, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,9 +21,6 @@ const AdminWebhooks = () => {
   const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newWebhook, setNewWebhook] = useState({ name: "", description: "", url: "" });
-  const [addingWebhook, setAddingWebhook] = useState(false);
 
   useEffect(() => {
     fetchWebhooks();
@@ -64,37 +61,6 @@ const AdminWebhooks = () => {
 
   const handleUrlChange = (id: string, newUrl: string) => {
     setWebhooks(webhooks.map(w => w.id === id ? { ...w, url: newUrl } : w));
-  };
-
-  const handleAddWebhook = async () => {
-    if (!newWebhook.name.trim()) {
-      toast.error("Webhook name is required");
-      return;
-    }
-
-    setAddingWebhook(true);
-    try {
-      const { data, error } = await supabase
-        .from("webhook_endpoints")
-        .insert({
-          name: newWebhook.name.trim().toLowerCase().replace(/\s+/g, "_"),
-          description: newWebhook.description.trim() || null,
-          url: newWebhook.url.trim()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setWebhooks([...webhooks, data]);
-      setNewWebhook({ name: "", description: "", url: "" });
-      setShowAddForm(false);
-      toast.success("Webhook added successfully");
-    } catch (error: any) {
-      toast.error("Failed to add webhook: " + error.message);
-    } finally {
-      setAddingWebhook(false);
-    }
   };
 
   const handleDeleteWebhook = async (id: string, name: string) => {
@@ -194,68 +160,6 @@ const AdminWebhooks = () => {
                 </div>
               </Card>
             ))}
-
-            {/* Add New Webhook */}
-            {showAddForm ? (
-              <Card className="p-6 border-dashed">
-                <h3 className="font-semibold mb-4">Add New Webhook</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="new-name">Name (identifier)</Label>
-                    <Input
-                      id="new-name"
-                      placeholder="e.g., send_notification"
-                      value={newWebhook.name}
-                      onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Will be converted to snake_case (e.g., "Send Notification" → "send_notification")
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="new-description">Description</Label>
-                    <Input
-                      id="new-description"
-                      placeholder="What is this webhook used for?"
-                      value={newWebhook.description}
-                      onChange={(e) => setNewWebhook({ ...newWebhook, description: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="new-url">Webhook URL</Label>
-                    <Input
-                      id="new-url"
-                      type="url"
-                      placeholder="https://your-webhook-url.com/endpoint"
-                      value={newWebhook.url}
-                      onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleAddWebhook} disabled={addingWebhook}>
-                      {addingWebhook ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : (
-                        <Plus className="w-4 h-4 mr-2" />
-                      )}
-                      Add Webhook
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowAddForm(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full border-dashed"
-                onClick={() => setShowAddForm(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Webhook
-              </Button>
-            )}
           </div>
         )}
       </div>
