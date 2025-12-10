@@ -6,15 +6,17 @@ const corsHeaders = {
 };
 
 interface CreateCoachRequest {
-  email: string;
+  email?: string;
   fullName: string;
   password?: string;
   bio?: string;
   specialization?: string;
+  personality?: string;
   hourlyRate?: number;
   expertise?: string[];
   status?: string;
   isVerified?: boolean;
+  webhookUrl?: string;
 }
 
 // Generate a random password if none provided
@@ -92,26 +94,27 @@ Deno.serve(async (req) => {
     // Parse request body
     const requestData: CreateCoachRequest = await req.json();
 
-    // Input validation
-    if (!requestData.email || typeof requestData.email !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Email is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(requestData.email) || requestData.email.length > 255) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
+    // Input validation - only fullName is required
     if (!requestData.fullName || typeof requestData.fullName !== "string" || requestData.fullName.length < 2 || requestData.fullName.length > 100) {
       return new Response(
         JSON.stringify({ error: "Full name is required (2-100 characters)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Generate placeholder email if not provided
+    let email = requestData.email;
+    if (!email) {
+      const namePart = requestData.fullName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      email = `${namePart}-bot-${randomSuffix}@persona.ai`;
+    }
+
+    // Validate email format if provided
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email) || email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -138,23 +141,24 @@ Deno.serve(async (req) => {
       );
     }
     const {
-      email,
       fullName,
       password,
       bio,
       specialization,
+      personality,
       hourlyRate,
       expertise,
       status = "admin_setup",
       isVerified = false,
+      webhookUrl,
     } = requestData;
 
     console.log(`Creating coach account for: ${email}`);
 
     // Validate required fields
-    if (!email || !fullName) {
+    if (!fullName) {
       return new Response(
-        JSON.stringify({ error: "Email and full name are required" }),
+        JSON.stringify({ error: "Full name is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -216,12 +220,13 @@ Deno.serve(async (req) => {
     console.log(`Assigned coach role to user: ${newUserId}`);
 
     // Step 4: Create the coach profile
-    const { error: coachProfileError } = await supabaseAdmin
+    const { data: coachProfileData, error: coachProfileError } = await supabaseAdmin
       .from("coach_profiles")
       .insert({
         user_id: newUserId,
         bio: bio || null,
         specialization: specialization || null,
+        personality: personality || null,
         hourly_rate: hourlyRate || null,
         expertise: expertise || null,
         status: status,
@@ -229,7 +234,10 @@ Deno.serve(async (req) => {
         is_claimed: false,
         rating: 0,
         total_sessions: 0,
-      });
+        webhook_url: webhookUrl || null,
+      })
+      .select('id')
+      .single();
 
     if (coachProfileError) {
       console.error("Error creating coach profile:", coachProfileError);
@@ -259,6 +267,7 @@ Deno.serve(async (req) => {
         success: true,
         message: `Coach account created successfully for ${fullName}`,
         userId: newUserId,
+        coachProfileId: coachProfileData?.id,
         email,
         temporaryPassword: password ? undefined : userPassword, // Only return if auto-generated
       }),

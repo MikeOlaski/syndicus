@@ -81,62 +81,50 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
   };
 
   const handleSave = async () => {
-    if (!fullName.trim() || !email.trim()) {
+    if (!fullName.trim()) {
       toast({
         title: "Error",
-        description: "Full name and email are required",
+        description: "Full name is required",
         variant: "destructive",
       });
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return;
+    // Basic email validation only if email is provided
+    if (email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid email address",
+          variant: "destructive",
+        });
+        return;
+      }
     }
     
     setIsLoading(true);
     try {
-      // Call the create-coach edge function
+      // Call the create-coach edge function with all fields
       const { data, error } = await supabase.functions.invoke('create-coach', {
         body: {
-          email: email.trim(),
+          email: email.trim() || undefined,
           fullName: fullName.trim(),
           bio: bio || undefined,
+          specialization: specialization || undefined,
+          personality: personality || undefined,
           hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
           expertise: expertise.length > 0 ? expertise : undefined,
+          status: status,
+          isVerified: isVerified,
+          webhookUrl: webhookUrl || undefined,
         },
       });
 
       if (error) throw error;
 
       const coachProfileId = data?.coachProfileId;
-
-      // If we got a coach profile ID, update additional fields
-      if (coachProfileId) {
-        setCreatedCoachId(coachProfileId);
-        
-        const { error: updateError } = await supabase
-          .from("coach_profiles")
-          .update({
-            specialization,
-            personality,
-            status,
-            is_verified: isVerified,
-            webhook_url: webhookUrl || null,
-          })
-          .eq("id", coachProfileId);
-
-        if (updateError) {
-          console.error("Error updating additional fields:", updateError);
-        }
-      }
+      setCreatedCoachId(coachProfileId || null);
 
       toast({
         title: "Success",
@@ -192,13 +180,13 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">Email (Optional)</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="coach@example.com"
+                  placeholder="Auto-generated if empty"
                 />
               </div>
             </div>
