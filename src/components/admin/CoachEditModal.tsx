@@ -373,6 +373,7 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
       coachBio={bio}
       coachAvatar={coach.profiles.avatar_url}
       webhookUrl={webhookUrl}
+      coachId={coach.id}
     />
   </>
   );
