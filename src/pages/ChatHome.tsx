@@ -1,19 +1,82 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface CoachData {
+  id: string;
+  name: string;
+  specialization: string;
+  image: string;
+  personality: string;
+  webhookUrl: string | null;
+}
 
 const ChatHome = () => {
   const { coachId } = useParams();
   const navigate = useNavigate();
+  const [coach, setCoach] = useState<CoachData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Sample coach data
-  const coach = {
-    id: "1",
-    name: "Dr. Sarah Chen",
-    specialization: "Executive Leadership",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
-    personality: "Strategic, analytical, and empowering"
-  };
+  useEffect(() => {
+    const fetchCoach = async () => {
+      if (!coachId) return;
+      
+      try {
+        // Fetch coach profile
+        const { data: coachProfile, error: coachError } = await supabase
+          .from("coach_profiles")
+          .select("*")
+          .eq("user_id", coachId)
+          .maybeSingle();
+
+        if (coachError) throw coachError;
+
+        if (coachProfile) {
+          // Fetch user profile
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", coachId)
+            .maybeSingle();
+
+          if (profileError) throw profileError;
+
+          setCoach({
+            id: coachId,
+            name: profile?.full_name || "Coach",
+            specialization: coachProfile.specialization || "General Coaching",
+            image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
+            personality: coachProfile.personality || "Professional and supportive",
+            webhookUrl: coachProfile.webhook_url,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching coach:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCoach();
+  }, [coachId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!coach) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Coach not found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
