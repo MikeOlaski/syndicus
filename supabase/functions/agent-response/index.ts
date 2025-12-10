@@ -35,34 +35,56 @@ serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the user is authenticated and has admin role
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create client with user's JWT to verify their identity
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !user) {
-      console.error("Auth error:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Create service role client for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Check for API key authentication (for n8n/external services)
+    const apiKeyHeader = req.headers.get("apikey") || req.headers.get("x-api-key");
+    const authHeader = req.headers.get("Authorization");
+
+    let isApiKeyAuth = false;
+    let user: { id: string } | null = null;
+
+    // Validate API key if provided (for n8n webhooks)
+    if (apiKeyHeader) {
+      // Verify API key matches the anon key or service role key
+      if (apiKeyHeader === supabaseAnonKey || apiKeyHeader === supabaseServiceRoleKey) {
+        isApiKeyAuth = true;
+        console.log("Authenticated via API key");
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Invalid API key" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } 
+    // Validate JWT if provided (for browser/app calls)
+    else if (authHeader) {
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
+      if (userError || !userData.user) {
+        console.error("Auth error:", userError);
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      user = userData.user;
+      console.log("Authenticated via JWT for user:", user.id);
+    } 
+    // No authentication provided
+    else {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header. Use 'apikey' or 'Authorization' header." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const body = await req.json();
     const { message_id, session_id, response, action, bot_name } = body;
@@ -110,23 +132,29 @@ serve(async (req) => {
       response: response?.substring(0, 100),
       action,
       bot_name,
-      user_id: user.id
+      user_id: user?.id || "api-key-auth",
+      auth_method: isApiKeyAuth ? "api-key" : "jwt"
     });
 
-    // Check admin role if trying to create a bot
+    // Check admin role if trying to create a bot (only for JWT auth)
     if (action === "create-bot") {
-      const { data: hasAdminRole } = await supabase.rpc("has_role", {
-        _user_id: user.id,
-        _role: "admin",
-      });
+      // API key auth is considered trusted (admin level)
+      if (!isApiKeyAuth && user) {
+        const { data: hasAdminRole } = await supabase.rpc("has_role", {
+          _user_id: user.id,
+          _role: "admin",
+        });
 
-      if (!hasAdminRole) {
-        console.error("Non-admin user attempted bot creation:", user.id);
-        return new Response(
-          JSON.stringify({ error: "Admin role required for bot creation" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        if (!hasAdminRole) {
+          console.error("Non-admin user attempted bot creation:", user.id);
+          return new Response(
+            JSON.stringify({ error: "Admin role required for bot creation" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
+      // If API key auth, it's trusted for bot creation
+      console.log("Bot creation authorized via:", isApiKeyAuth ? "API key" : "Admin JWT");
     }
 
     let coachCreated = false;
