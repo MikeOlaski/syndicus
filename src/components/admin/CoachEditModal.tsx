@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, X, MessageCircle, Save } from "lucide-react";
-import { CoachChatModal } from "./CoachChatModal";
+import { CoachChatModal } from "@/components/CoachChatModal";
 
 interface Coach {
   id: string;
