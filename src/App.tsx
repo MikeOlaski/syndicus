@@ -14,6 +14,7 @@ import SubscriberDashboard from "./pages/SubscriberDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCoaches from "./pages/AdminCoaches";
+import AdminSubscribers from "./pages/AdminSubscribers";
 import AdminWebhooks from "./pages/AdminWebhooks";
 import ChatPage from "./pages/ChatPage";
 import MyTwin from "./pages/MyTwin";
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/subscriber-dashboard/chat" element={<ChatPage role="subscriber" />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/coaches" element={<AdminCoaches />} />
+          <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
           <Route path="/admin-dashboard/chat" element={<ChatPage role="admin" />} />
           <Route path="/coach/:coachId" element={<CoachProfile />} />
