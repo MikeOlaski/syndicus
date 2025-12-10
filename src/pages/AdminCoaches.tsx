@@ -7,7 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Table as TableComponent,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoachImporter } from "@/components/admin/CoachImporter";
@@ -49,12 +58,15 @@ interface Coach {
   };
 }
 
+type ViewMode = "grid" | "table" | "kanban";
+
 const AdminCoaches = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [filteredCoaches, setFilteredCoaches] = useState<Coach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -316,6 +328,17 @@ const AdminCoaches = () => {
                 </SelectContent>
               </Select>
             </div>
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as ViewMode)} className="border rounded-md">
+              <ToggleGroupItem value="grid" aria-label="Grid view" className="px-3">
+                <LayoutGrid className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Table view" className="px-3">
+                <Table className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="kanban" aria-label="Kanban view" className="px-3">
+                <Columns3 className="w-4 h-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
             <div className="flex gap-2">
               <Button onClick={() => setIsManualAddModalOpen(true)} variant="outline" className="gap-2">
                 <UserPlus className="w-4 h-4" />
@@ -399,7 +422,149 @@ const AdminCoaches = () => {
                 : "No coaches registered yet"}
             </p>
           </Card>
+        ) : viewMode === "table" ? (
+          /* Table View */
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <TableComponent>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Coach</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Verified</TableHead>
+                    <TableHead>Rating</TableHead>
+                    <TableHead>Sessions</TableHead>
+                    <TableHead>Rate</TableHead>
+                    <TableHead>Homepage</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCoaches.map((coach) => (
+                    <TableRow key={coach.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={coach.profiles.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                              {getInitials(coach.profiles.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{coach.profiles.full_name || "Unnamed"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{coach.profiles.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(coach.status)} className="text-xs">
+                          {getStatusLabel(coach.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={coach.is_verified ? "default" : "secondary"} className="text-xs">
+                          {coach.is_verified ? "Yes" : "No"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3 text-yellow-500" />
+                          {coach.rating.toFixed(1)}
+                        </div>
+                      </TableCell>
+                      <TableCell>{coach.total_sessions}</TableCell>
+                      <TableCell>${coach.hourly_rate || "N/A"}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={coach.show_on_homepage || false}
+                          onCheckedChange={() => toggleHomepageVisibility(coach.id, coach.show_on_homepage || false)}
+                          aria-label="Show on homepage"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button onClick={() => handleEditCoach(coach)} variant="ghost" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => toggleVerification(coach.id, coach.is_verified)}
+                            variant="ghost"
+                            size="sm"
+                          >
+                            {coach.is_verified ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteClick(coach)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </TableComponent>
+            </div>
+          </Card>
+        ) : viewMode === "kanban" ? (
+          /* Kanban View */
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto">
+            {["admin_setup", "onboarding_started", "active", "inactive"].map((status) => {
+              const statusCoaches = filteredCoaches.filter((c) => c.status === status);
+              return (
+                <div key={status} className="min-w-[280px]">
+                  <div className="flex items-center gap-2 mb-3 pb-2 border-b">
+                    <Badge variant={getStatusBadgeVariant(status)}>{getStatusLabel(status)}</Badge>
+                    <span className="text-sm text-muted-foreground">({statusCoaches.length})</span>
+                  </div>
+                  <div className="space-y-3">
+                    {statusCoaches.map((coach) => (
+                      <Card key={coach.id} className="p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={coach.profiles.avatar_url || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {getInitials(coach.profiles.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate text-sm">{coach.profiles.full_name || "Unnamed"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{coach.profiles.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                          <Star className="w-3 h-3 text-yellow-500" />
+                          <span>{coach.rating.toFixed(1)}</span>
+                          <span className="text-border">•</span>
+                          <span>{coach.total_sessions} sessions</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button onClick={() => handleEditCoach(coach)} variant="outline" size="sm" className="flex-1 h-7 text-xs">
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => toggleVerification(coach.id, coach.is_verified)}
+                            variant={coach.is_verified ? "outline" : "default"}
+                            size="sm"
+                            className="flex-1 h-7 text-xs"
+                          >
+                            {coach.is_verified ? "Unverify" : "Verify"}
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                    {statusCoaches.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">No coaches</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
+          /* Grid View (default) */
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredCoaches.map((coach) => (
               <Card key={coach.id} className="p-6 hover:shadow-lg transition-shadow relative">
