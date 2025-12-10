@@ -90,6 +90,7 @@ export type Database = {
           total_sessions: number | null
           updated_at: string
           user_id: string
+          webhook_url: string | null
         }
         Insert: {
           bio?: string | null
@@ -107,6 +108,7 @@ export type Database = {
           total_sessions?: number | null
           updated_at?: string
           user_id: string
+          webhook_url?: string | null
         }
         Update: {
           bio?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           total_sessions?: number | null
           updated_at?: string
           user_id?: string
+          webhook_url?: string | null
         }
         Relationships: []
       }
