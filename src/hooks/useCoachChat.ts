@@ -1,0 +1,278 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface CoachData {
+  id: string;
+  name: string;
+  specialization: string;
+  image: string;
+  webhookUrl: string | null;
+}
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+}
+
+interface ChatSession {
+  sessionId: string;
+  coachId: string;
+  createdAt: string;
+  lastMessage: string;
+  messages: Message[];
+}
+
+// LocalStorage helper functions
+const getStorageKey = (coachId: string) => `chat_sessions_${coachId}`;
+const getCurrentSessionKey = (coachId: string) => `current_session_${coachId}`;
+
+const getSessions = (coachId: string): ChatSession[] => {
+  const stored = localStorage.getItem(getStorageKey(coachId));
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveSessions = (coachId: string, sessions: ChatSession[]) => {
+  localStorage.setItem(getStorageKey(coachId), JSON.stringify(sessions));
+};
+
+const generateSessionId = () => {
+  return Array.from({ length: 32 }, () => 
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+};
+
+export const useCoachChat = (coachId: string | undefined) => {
+  const { toast } = useToast();
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [coach, setCoach] = useState<CoachData | null>(null);
+  const [isCoachLoading, setIsCoachLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (!coachId || !sessionId || messages.length === 0) return;
+    
+    const allSessions = getSessions(coachId);
+    const existingIndex = allSessions.findIndex(s => s.sessionId === sessionId);
+    
+    const sessionData: ChatSession = {
+      sessionId,
+      coachId,
+      createdAt: existingIndex >= 0 ? allSessions[existingIndex].createdAt : new Date().toISOString(),
+      lastMessage: messages[messages.length - 1]?.content.slice(0, 50) || "",
+      messages,
+    };
+
+    if (existingIndex >= 0) {
+      allSessions[existingIndex] = sessionData;
+    } else {
+      allSessions.unshift(sessionData);
+    }
+
+    saveSessions(coachId, allSessions);
+    setSessions(allSessions);
+    localStorage.setItem(getCurrentSessionKey(coachId), sessionId);
+  }, [messages, sessionId, coachId]);
+
+  const createNewSession = useCallback((coachName?: string) => {
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+    
+    const welcomeMessage: Message = {
+      id: "welcome",
+      role: "assistant",
+      content: `Hello! I'm ${coachName || coach?.name || "your coach"}'s AI coaching assistant. I'm here to help you. What can I assist you with today?`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setMessages([welcomeMessage]);
+    
+    if (coachId) {
+      localStorage.setItem(getCurrentSessionKey(coachId), newSessionId);
+    }
+  }, [coach?.name, coachId]);
+
+  useEffect(() => {
+    const fetchCoach = async () => {
+      if (!coachId) return;
+      
+      try {
+        const { data: coachProfile, error: coachError } = await supabase
+          .from("coach_profiles")
+          .select("*")
+          .eq("user_id", coachId)
+          .maybeSingle();
+
+        if (coachError) throw coachError;
+
+        if (coachProfile) {
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", coachId)
+            .maybeSingle();
+
+          if (profileError) throw profileError;
+
+          const coachData: CoachData = {
+            id: coachId,
+            name: profile?.full_name || "Coach",
+            specialization: coachProfile.specialization || "General Coaching",
+            image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
+            webhookUrl: coachProfile.webhook_url,
+          };
+          setCoach(coachData);
+
+          // Load existing sessions
+          const existingSessions = getSessions(coachId);
+          setSessions(existingSessions);
+
+          // Check for current session or create new one
+          const currentSessionId = localStorage.getItem(getCurrentSessionKey(coachId));
+          const existingSession = existingSessions.find(s => s.sessionId === currentSessionId);
+
+          if (existingSession && existingSession.messages.length > 0) {
+            // Resume existing session
+            setSessionId(existingSession.sessionId);
+            setMessages(existingSession.messages);
+          } else {
+            // Create new session
+            const newSessionId = generateSessionId();
+            setSessionId(newSessionId);
+            
+            const welcomeMessage: Message = {
+              id: "welcome",
+              role: "assistant",
+              content: `Hello! I'm ${coachData.name}'s AI coaching assistant. I'm here to help you. What can I assist you with today?`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            
+            setMessages([welcomeMessage]);
+            localStorage.setItem(getCurrentSessionKey(coachId), newSessionId);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching coach:", error);
+      } finally {
+        setIsCoachLoading(false);
+      }
+    };
+
+    fetchCoach();
+  }, [coachId]);
+
+  const loadSession = useCallback((session: ChatSession) => {
+    setSessionId(session.sessionId);
+    setMessages(session.messages);
+    if (coachId) {
+      localStorage.setItem(getCurrentSessionKey(coachId), session.sessionId);
+    }
+  }, [coachId]);
+
+  const deleteSession = useCallback((sessionIdToDelete: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!coachId) return;
+
+    const allSessions = getSessions(coachId);
+    const filtered = allSessions.filter(s => s.sessionId !== sessionIdToDelete);
+    saveSessions(coachId, filtered);
+    setSessions(filtered);
+
+    // If deleting current session, create a new one
+    if (sessionIdToDelete === sessionId) {
+      createNewSession();
+    }
+
+    toast({
+      title: "Chat deleted",
+      description: "The chat session has been removed.",
+    });
+  }, [coachId, sessionId, createNewSession, toast]);
+
+  const sendMessage = useCallback(async (messageText?: string) => {
+    const textToSend = messageText || message;
+    if (!textToSend.trim() || isLoading || !coach?.webhookUrl) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: textToSend.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setMessage("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(coach.webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          action: "sendMessage",
+          chatInput: userMessage.content,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.response || data.output || data.message || JSON.stringify(data),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error: any) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [message, isLoading, coach?.webhookUrl, sessionId, toast]);
+
+  return {
+    message,
+    setMessage,
+    messages,
+    isLoading,
+    coach,
+    isCoachLoading,
+    sessionId,
+    sessions,
+    messagesEndRef,
+    createNewSession,
+    loadSession,
+    deleteSession,
+    sendMessage,
+  };
+};
+
+export type { Message, ChatSession, CoachData };
