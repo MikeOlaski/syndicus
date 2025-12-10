@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// Get webhook URL from environment variable (secure)
-const WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL") || "";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,11 +13,41 @@ serve(async (req) => {
   }
 
   try {
-    // Validate webhook URL is configured
-    if (!WEBHOOK_URL) {
-      console.error("N8N_WEBHOOK_URL environment variable not configured");
+    // Initialize Supabase client with service role to bypass RLS
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Supabase configuration missing");
       return new Response(
-        JSON.stringify({ error: "Webhook not configured" }),
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Fetch webhook URL from database
+    const { data: webhookData, error: webhookError } = await supabase
+      .from("webhook_endpoints")
+      .select("url")
+      .eq("name", "add_coach_agent")
+      .single();
+
+    if (webhookError || !webhookData?.url) {
+      console.error("Failed to fetch webhook URL:", webhookError);
+      return new Response(
+        JSON.stringify({ error: "Webhook not configured. Please set up the webhook URL in the admin dashboard." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const WEBHOOK_URL = webhookData.url;
+
+    if (!WEBHOOK_URL || WEBHOOK_URL.trim() === "") {
+      console.error("Webhook URL is empty");
+      return new Response(
+        JSON.stringify({ error: "Webhook URL is not configured. Please add the webhook URL in the admin dashboard." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -56,10 +84,9 @@ serve(async (req) => {
       );
     }
 
-    console.log("Sending to n8n webhook:", { message, message_id, session_id });
+    console.log("Sending to webhook:", { message, message_id, session_id, webhook: WEBHOOK_URL.substring(0, 50) + "..." });
 
-    // Build the endpoint URL for n8n to send additional responses
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    // Build the endpoint URL for sending additional responses
     const agentResponseEndpoint = `${supabaseUrl}/functions/v1/agent-response`;
 
     const response = await fetch(WEBHOOK_URL, {

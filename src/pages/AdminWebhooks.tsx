@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Webhook, Save, Trash2, Loader2 } from "lucide-react";
+import { Webhook, Save, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -63,24 +63,6 @@ const AdminWebhooks = () => {
     setWebhooks(webhooks.map(w => w.id === id ? { ...w, url: newUrl } : w));
   };
 
-  const handleDeleteWebhook = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete webhook "${name}"?`)) return;
-
-    try {
-      const { error } = await supabase
-        .from("webhook_endpoints")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-      
-      setWebhooks(webhooks.filter(w => w.id !== id));
-      toast.success("Webhook deleted successfully");
-    } catch (error: any) {
-      toast.error("Failed to delete webhook: " + error.message);
-    }
-  };
-
   const getWebhookLabel = (name: string) => {
     const labels: Record<string, string> = {
       add_coach_agent: "Add Coach by Agent",
@@ -112,24 +94,14 @@ const AdminWebhooks = () => {
             {webhooks.map((webhook) => (
               <Card key={webhook.id} className="p-6">
                 <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg">{getWebhookLabel(webhook.name)}</h3>
-                      {webhook.description && (
-                        <p className="text-sm text-muted-foreground">{webhook.description}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Key: <code className="bg-muted px-1 rounded">{webhook.name}</code>
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteWebhook(webhook.id, webhook.name)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <div>
+                    <h3 className="font-semibold text-lg">{getWebhookLabel(webhook.name)}</h3>
+                    {webhook.description && (
+                      <p className="text-sm text-muted-foreground">{webhook.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Key: <code className="bg-muted px-1 rounded">{webhook.name}</code>
+                    </p>
                   </div>
                   
                   <div className="flex gap-3">
