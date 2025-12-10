@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoachImporter } from "@/components/admin/CoachImporter";
@@ -39,6 +40,8 @@ interface Coach {
   status: string;
   created_at: string;
   last_activity_at: string;
+  webhook_url: string | null;
+  show_on_homepage: boolean;
   profiles: {
     full_name: string | null;
     email: string;
@@ -161,6 +164,31 @@ const AdminCoaches = () => {
       toast({
         title: "Error",
         description: "Failed to update coach verification",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleHomepageVisibility = async (coachId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("coach_profiles")
+        .update({ show_on_homepage: !currentStatus })
+        .eq("id", coachId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Coach ${!currentStatus ? "now visible" : "hidden"} on homepage`,
+      });
+
+      fetchCoaches();
+    } catch (error) {
+      console.error("Error updating coach:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update homepage visibility",
         variant: "destructive",
       });
     }
@@ -374,8 +402,18 @@ const AdminCoaches = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredCoaches.map((coach) => (
-              <Card key={coach.id} className="p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start gap-4 mb-4">
+              <Card key={coach.id} className="p-6 hover:shadow-lg transition-shadow relative">
+                {/* Homepage Toggle */}
+                <div className="absolute top-3 right-3 flex items-center gap-2">
+                  <Globe className={`w-4 h-4 ${coach.show_on_homepage ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <Switch
+                    checked={coach.show_on_homepage || false}
+                    onCheckedChange={() => toggleHomepageVisibility(coach.id, coach.show_on_homepage || false)}
+                    aria-label="Show on homepage"
+                  />
+                </div>
+                
+                <div className="flex items-start gap-4 mb-4 pr-16">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={coach.profiles.avatar_url || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary">

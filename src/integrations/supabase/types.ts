@@ -85,6 +85,7 @@ export type Database = {
           last_activity_at: string | null
           personality: string | null
           rating: number | null
+          show_on_homepage: boolean | null
           specialization: string | null
           status: Database["public"]["Enums"]["coach_status"]
           total_sessions: number | null
@@ -103,6 +104,7 @@ export type Database = {
           last_activity_at?: string | null
           personality?: string | null
           rating?: number | null
+          show_on_homepage?: boolean | null
           specialization?: string | null
           status?: Database["public"]["Enums"]["coach_status"]
           total_sessions?: number | null
@@ -121,6 +123,7 @@ export type Database = {
           last_activity_at?: string | null
           personality?: string | null
           rating?: number | null
+          show_on_homepage?: boolean | null
           specialization?: string | null
           status?: Database["public"]["Enums"]["coach_status"]
           total_sessions?: number | null

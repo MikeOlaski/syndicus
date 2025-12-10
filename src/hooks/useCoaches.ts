@@ -15,6 +15,7 @@ export interface Coach {
   variant: "primary" | "secondary";
   hourlyRate?: number;
   isVerified: boolean;
+  webhookUrl?: string;
 }
 
 export const useCoaches = () => {
@@ -25,6 +26,7 @@ export const useCoaches = () => {
         .from("coach_profiles")
         .select("*")
         .eq("is_verified", true)
+        .eq("show_on_homepage", true)
         .order("rating", { ascending: false });
 
       if (coachError) throw coachError;
@@ -70,6 +72,7 @@ export const useCoaches = () => {
           variant: index % 3 === 0 ? "primary" : "secondary",
           hourlyRate: coach.hourly_rate || undefined,
           isVerified: coach.is_verified || false,
+          webhookUrl: coach.webhook_url || undefined,
         };
       });
     },
