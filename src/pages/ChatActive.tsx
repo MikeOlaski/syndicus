@@ -1,9 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Maximize2, Loader2, Send } from "lucide-react";
+import { MessageCircle, Maximize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface CoachData {
   id: string;
@@ -20,6 +28,33 @@ interface Message {
   timestamp: string;
 }
 
+interface ChatSession {
+  sessionId: string;
+  coachId: string;
+  createdAt: string;
+  lastMessage: string;
+  messages: Message[];
+}
+
+// LocalStorage helper functions
+const getStorageKey = (coachId: string) => `chat_sessions_${coachId}`;
+const getCurrentSessionKey = (coachId: string) => `current_session_${coachId}`;
+
+const getSessions = (coachId: string): ChatSession[] => {
+  const stored = localStorage.getItem(getStorageKey(coachId));
+  return stored ? JSON.parse(stored) : [];
+};
+
+const saveSessions = (coachId: string, sessions: ChatSession[]) => {
+  localStorage.setItem(getStorageKey(coachId), JSON.stringify(sessions));
+};
+
+const generateSessionId = () => {
+  return Array.from({ length: 32 }, () => 
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+};
+
 const ChatActive = () => {
   const { coachId } = useParams();
   const navigate = useNavigate();
@@ -30,6 +65,8 @@ const ChatActive = () => {
   const [coach, setCoach] = useState<CoachData | null>(null);
   const [isCoachLoading, setIsCoachLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -39,6 +76,32 @@ const ChatActive = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (!coachId || !sessionId || messages.length === 0) return;
+    
+    const allSessions = getSessions(coachId);
+    const existingIndex = allSessions.findIndex(s => s.sessionId === sessionId);
+    
+    const sessionData: ChatSession = {
+      sessionId,
+      coachId,
+      createdAt: existingIndex >= 0 ? allSessions[existingIndex].createdAt : new Date().toISOString(),
+      lastMessage: messages[messages.length - 1]?.content.slice(0, 50) || "",
+      messages,
+    };
+
+    if (existingIndex >= 0) {
+      allSessions[existingIndex] = sessionData;
+    } else {
+      allSessions.unshift(sessionData);
+    }
+
+    saveSessions(coachId, allSessions);
+    setSessions(allSessions);
+    localStorage.setItem(getCurrentSessionKey(coachId), sessionId);
+  }, [messages, sessionId, coachId]);
 
   useEffect(() => {
     const fetchCoach = async () => {
@@ -62,32 +125,31 @@ const ChatActive = () => {
 
           if (profileError) throw profileError;
 
-          setCoach({
+          const coachData = {
             id: coachId,
             name: profile?.full_name || "Coach",
             specialization: coachProfile.specialization || "General Coaching",
             image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
             webhookUrl: coachProfile.webhook_url,
-          });
+          };
+          setCoach(coachData);
 
-          // Generate session ID
-          const storageKey = `chat_session_${coachId}`;
-          let storedSessionId = localStorage.getItem(storageKey);
-          if (!storedSessionId) {
-            storedSessionId = Array.from({ length: 32 }, () => 
-              Math.floor(Math.random() * 16).toString(16)
-            ).join('');
-            localStorage.setItem(storageKey, storedSessionId);
+          // Load existing sessions
+          const existingSessions = getSessions(coachId);
+          setSessions(existingSessions);
+
+          // Check for current session or create new one
+          const currentSessionId = localStorage.getItem(getCurrentSessionKey(coachId));
+          const existingSession = existingSessions.find(s => s.sessionId === currentSessionId);
+
+          if (existingSession && existingSession.messages.length > 0) {
+            // Resume existing session
+            setSessionId(existingSession.sessionId);
+            setMessages(existingSession.messages);
+          } else {
+            // Create new session
+            createNewSession(coachData.name);
           }
-          setSessionId(storedSessionId);
-
-          // Add welcome message
-          setMessages([{
-            id: "welcome",
-            role: "assistant",
-            content: `Hello! I'm ${profile?.full_name || "your coach"}'s AI coaching assistant. I'm here to help you. What can I assist you with today?`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }]);
         }
       } catch (error) {
         console.error("Error fetching coach:", error);
@@ -98,6 +160,55 @@ const ChatActive = () => {
 
     fetchCoach();
   }, [coachId]);
+
+  const createNewSession = (coachName?: string) => {
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+    
+    const welcomeMessage: Message = {
+      id: "welcome",
+      role: "assistant",
+      content: `Hello! I'm ${coachName || coach?.name || "your coach"}'s AI coaching assistant. I'm here to help you. What can I assist you with today?`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setMessages([welcomeMessage]);
+    
+    if (coachId) {
+      localStorage.setItem(getCurrentSessionKey(coachId), newSessionId);
+    }
+    
+    setIsHistoryOpen(false);
+  };
+
+  const loadSession = (session: ChatSession) => {
+    setSessionId(session.sessionId);
+    setMessages(session.messages);
+    if (coachId) {
+      localStorage.setItem(getCurrentSessionKey(coachId), session.sessionId);
+    }
+    setIsHistoryOpen(false);
+  };
+
+  const deleteSession = (sessionIdToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!coachId) return;
+
+    const allSessions = getSessions(coachId);
+    const filtered = allSessions.filter(s => s.sessionId !== sessionIdToDelete);
+    saveSessions(coachId, filtered);
+    setSessions(filtered);
+
+    // If deleting current session, create a new one
+    if (sessionIdToDelete === sessionId) {
+      createNewSession();
+    }
+
+    toast({
+      title: "Chat deleted",
+      description: "The chat session has been removed.",
+    });
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,8 +295,72 @@ const ChatActive = () => {
             </div>
           </a>
           <div className="flex items-center gap-2">
+            {/* New Chat Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => createNewSession()}
+              className="gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              New Chat
+            </Button>
+
+            {/* Chat History Button */}
+            <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <History className="w-4 h-4" />
+                  History
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Chat History</SheetTitle>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-100px)] mt-4">
+                  {sessions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      No chat history yet
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {sessions.map((session) => (
+                        <div
+                          key={session.sessionId}
+                          onClick={() => loadSession(session)}
+                          className={`p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors group ${
+                            session.sessionId === sessionId ? "bg-muted border-primary" : ""
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {session.lastMessage || "New conversation"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(session.createdAt).toLocaleDateString()} • {session.messages.length} messages
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => deleteSession(session.sessionId, e)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+
             <div 
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity ml-2"
               onClick={() => navigate(`/coach/${coachId}`)}
             >
               <img src={coach.image} alt={coach.name} className="w-8 h-8 rounded-full" />
