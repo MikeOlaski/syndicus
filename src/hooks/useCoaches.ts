@@ -35,19 +35,20 @@ export const useCoaches = () => {
 
       let profilesById = new Map<
         string,
-        { id: string; full_name: string | null; email: string; avatar_url: string | null }
+        { id: string; full_name: string | null; avatar_url: string | null }
       >();
 
       if (userIds.length > 0) {
+        // Use public_coach_profiles view which has no RLS restrictions for public access
         const { data: profiles, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, full_name, email, avatar_url")
+          .from("public_coach_profiles")
+          .select("id, full_name, avatar_url")
           .in("id", userIds);
 
         if (profilesError) throw profilesError;
 
         profilesById = new Map(
-          (profiles ?? []).map((profile) => [profile.id, profile])
+          (profiles ?? []).map((profile) => [profile.id!, profile])
         );
       }
 
@@ -57,7 +58,7 @@ export const useCoaches = () => {
         return {
           id: coach.user_id,
           name: profile?.full_name || "Coach",
-          email: profile?.email || "",
+          email: "",
           specialization: coach.specialization || "General Coaching",
           rating: Number(coach.rating ?? 4.5),
           clients: coach.total_sessions || 0,
