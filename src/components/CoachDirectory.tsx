@@ -134,7 +134,20 @@ const CoachDirectory = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
               {filteredCoaches.map((coach) => (
-                <CoachCard key={coach.id} {...coach} />
+                <CoachCard 
+                  key={coach.id} 
+                  id={coach.id}
+                  name={coach.name}
+                  specialization={coach.specialization}
+                  rating={coach.rating}
+                  clients={coach.clients}
+                  description={coach.description}
+                  personality={coach.personality}
+                  tags={coach.tags}
+                  image={coach.image}
+                  variant={coach.variant}
+                  webhookUrl={coach.webhookUrl}
+                />
               ))}
             </div>
           )}
