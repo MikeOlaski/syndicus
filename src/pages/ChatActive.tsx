@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Maximize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
+import { MessageCircle, Minimize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -161,8 +161,9 @@ const ChatActive = () => {
               variant="ghost" 
               size="icon"
               onClick={() => navigate(`/coach/${coachId}`)}
+              title="Back to profile"
             >
-              <Maximize2 className="w-4 h-4" />
+              <Minimize2 className="w-4 h-4" />
             </Button>
             <Button className="ml-2 bg-gradient-primary">Book Live Session</Button>
           </div>
