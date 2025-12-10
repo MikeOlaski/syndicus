@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CoachImporter } from "@/components/admin/CoachImporter";
 import { CoachEditModal } from "@/components/admin/CoachEditModal";
 import { CoachAddModal } from "@/components/admin/CoachAddModal";
+import { CoachManualAddModal } from "@/components/admin/CoachManualAddModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,7 @@ const AdminCoaches = () => {
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isManualAddModalOpen, setIsManualAddModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [coachToDelete, setCoachToDelete] = useState<Coach | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -286,10 +288,16 @@ const AdminCoaches = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-              <UserPlus className="w-4 h-4" />
-              Add Coach
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsManualAddModalOpen(true)} variant="outline" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Add Coach
+              </Button>
+              <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+                <Bot className="w-4 h-4" />
+                Add Coach By Agent
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -511,6 +519,12 @@ const AdminCoaches = () => {
         <CoachAddModal
           open={isAddModalOpen}
           onOpenChange={setIsAddModalOpen}
+          onSuccess={fetchCoaches}
+        />
+
+        <CoachManualAddModal
+          open={isManualAddModalOpen}
+          onOpenChange={setIsManualAddModalOpen}
           onSuccess={fetchCoaches}
         />
 
