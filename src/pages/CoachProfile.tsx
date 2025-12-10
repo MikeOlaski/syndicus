@@ -207,7 +207,7 @@ const CoachProfile = () => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate(`/coach/${coachId}/chat`)}
+                onClick={() => navigate(`/coach/${coachId}/chat/active`)}
               >
                 <Maximize2 className="w-4 h-4" />
               </Button>
