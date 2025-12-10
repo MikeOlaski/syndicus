@@ -71,9 +71,7 @@ export const CoachChatModal = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: userMessage.content,
-          session_id: `chat_${Date.now()}`,
-          coach_name: coachName,
+          chatInput: userMessage.content,
         }),
       });
 
