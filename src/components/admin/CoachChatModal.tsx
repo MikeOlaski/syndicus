@@ -55,11 +55,12 @@ export const CoachChatModal = ({
     return storedSessionId;
   };
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   useEffect(() => {
     if (open) {
@@ -165,7 +166,7 @@ export const CoachChatModal = ({
         </DialogHeader>
 
         {/* Messages */}
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+        <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
@@ -225,6 +226,7 @@ export const CoachChatModal = ({
                 </div>
               </div>
             )}
+            <div ref={scrollRef} />
           </div>
         </ScrollArea>
 
