@@ -87,7 +87,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { message_id, session_id, response, action, bot_name } = body;
+    const { message_id, session_id, response, action, bot_name, email: providedEmail } = body;
 
     // Input validation
     if (!session_id || typeof session_id !== "string" || session_id.length > 100) {
@@ -126,12 +126,21 @@ serve(async (req) => {
       );
     }
 
+    // Validate email if provided
+    if (providedEmail && (typeof providedEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(providedEmail))) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("Received agent response:", { 
       message_id, 
       session_id, 
       response: response?.substring(0, 100),
       action,
       bot_name,
+      email: providedEmail || "will-generate",
       user_id: user?.id || "api-key-auth",
       auth_method: isApiKeyAuth ? "api-key" : "jwt"
     });
@@ -165,8 +174,11 @@ serve(async (req) => {
       console.log(`Creating bot/coach with name: ${bot_name}`);
 
       try {
-        const email = generateBotEmail(bot_name);
+        // Use provided email or generate one
+        const email = providedEmail || generateBotEmail(bot_name);
         const password = generatePassword();
+        
+        console.log(`Using email for bot: ${email} (${providedEmail ? "provided" : "generated"})`);
 
         // Step 1: Create the auth user
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
