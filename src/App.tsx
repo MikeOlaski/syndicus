@@ -22,6 +22,7 @@ import Conversations from "./pages/Conversations";
 import CoachProfile from "./pages/CoachProfile";
 import ChatHome from "./pages/ChatHome";
 import ChatActive from "./pages/ChatActive";
+import CoachRedirect from "./pages/CoachRedirect";
 import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import SuccessStories from "./pages/SuccessStories";
@@ -69,6 +70,10 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/directory" element={<Directory />} />
+          {/* Legacy coach routes - redirect to new slug-based URLs */}
+          <Route path="/coach/:coachId" element={<CoachRedirect />} />
+          <Route path="/coach/:coachId/chat" element={<CoachRedirect />} />
+          <Route path="/coach/:coachId/chat/active" element={<CoachRedirect />} />
           {/* Root-level coach routes - MUST be after all static routes */}
           <Route path="/:coachSlug" element={<CoachProfile />} />
           <Route path="/:coachSlug/chat" element={<ChatHome />} />
