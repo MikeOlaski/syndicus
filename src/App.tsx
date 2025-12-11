@@ -62,9 +62,6 @@ const App = () => (
           <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
           <Route path="/admin-dashboard/chat" element={<ChatPage role="admin" />} />
-          <Route path="/coach/:coachId" element={<CoachProfile />} />
-          <Route path="/coach/:coachId/chat" element={<ChatHome />} />
-          <Route path="/coach/:coachId/chat/active" element={<ChatActive />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/success-stories" element={<SuccessStories />} />
@@ -72,6 +69,10 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/directory" element={<Directory />} />
+          {/* Root-level coach routes - MUST be after all static routes */}
+          <Route path="/:coachSlug" element={<CoachProfile />} />
+          <Route path="/:coachSlug/chat" element={<ChatHome />} />
+          <Route path="/:coachSlug/chat/active" element={<ChatActive />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

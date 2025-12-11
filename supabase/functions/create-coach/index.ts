@@ -19,6 +19,29 @@ interface CreateCoachRequest {
   webhookUrl?: string;
 }
 
+// Reserved slugs that conflict with existing routes
+const RESERVED_SLUGS = [
+  'auth', 'reset-password', 'about', 'coaches', 'syndic8', 'create-claim',
+  'coach-dashboard', 'subscriber-dashboard', 'admin-dashboard',
+  'how-it-works', 'pricing', 'success-stories', 'help', 'contact',
+  'privacy', 'directory', 'api', 'admin', 'login', 'signup', 'register',
+];
+
+// Generate a URL-friendly slug from a name
+function generateSlug(name: string): string {
+  if (!name || typeof name !== 'string') {
+    return `coach-${Date.now()}`;
+  }
+  
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // Generate a random password if none provided
 function generatePassword(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -140,6 +163,7 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
     const {
       fullName,
       password,
@@ -155,16 +179,38 @@ Deno.serve(async (req) => {
 
     console.log(`Creating coach account for: ${email}`);
 
-    // Validate required fields
-    if (!fullName) {
-      return new Response(
-        JSON.stringify({ error: "Full name is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Use provided password or generate one
     const userPassword = password || generatePassword();
+
+    // Generate unique slug
+    let baseSlug = generateSlug(fullName);
+    
+    // If empty after sanitization, use fallback
+    if (!baseSlug) {
+      baseSlug = 'coach';
+    }
+    
+    // If reserved, append '-coach' suffix
+    if (RESERVED_SLUGS.includes(baseSlug)) {
+      baseSlug = `${baseSlug}-coach`;
+    }
+    
+    // Check for uniqueness and append counter if needed
+    let slug = baseSlug;
+    let counter = 2;
+    while (true) {
+      const { data: existing } = await supabaseAdmin
+        .from("coach_profiles")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      
+      if (!existing) break;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    console.log(`Generated slug: ${slug}`);
 
     // Step 1: Create the auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -219,11 +265,12 @@ Deno.serve(async (req) => {
 
     console.log(`Assigned coach role to user: ${newUserId}`);
 
-    // Step 4: Create the coach profile
+    // Step 4: Create the coach profile with slug
     const { data: coachProfileData, error: coachProfileError } = await supabaseAdmin
       .from("coach_profiles")
       .insert({
         user_id: newUserId,
+        slug: slug,
         bio: bio || null,
         specialization: specialization || null,
         personality: personality || null,
@@ -257,6 +304,7 @@ Deno.serve(async (req) => {
       details: {
         email,
         full_name: fullName,
+        slug,
         status,
         is_verified: isVerified,
       },
@@ -269,6 +317,7 @@ Deno.serve(async (req) => {
         userId: newUserId,
         coachProfileId: coachProfileData?.id,
         email,
+        slug,
         temporaryPassword: password ? undefined : userPassword, // Only return if auto-generated
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
