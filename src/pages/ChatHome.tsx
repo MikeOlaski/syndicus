@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface CoachData {
   id: string;
+  slug: string;
   name: string;
   specialization: string;
   image: string;
@@ -14,21 +15,21 @@ interface CoachData {
 }
 
 const ChatHome = () => {
-  const { coachId } = useParams();
+  const { coachSlug } = useParams();
   const navigate = useNavigate();
   const [coach, setCoach] = useState<CoachData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCoach = async () => {
-      if (!coachId) return;
+      if (!coachSlug) return;
       
       try {
-        // Fetch coach profile
+        // Fetch coach profile by slug
         const { data: coachProfile, error: coachError } = await supabase
           .from("coach_profiles")
-          .select("*")
-          .eq("user_id", coachId)
+          .select("user_id, slug, specialization, personality, webhook_url")
+          .eq("slug", coachSlug)
           .maybeSingle();
 
         if (coachError) throw coachError;
@@ -38,13 +39,14 @@ const ChatHome = () => {
           const { data: profile, error: profileError } = await supabase
             .from("profiles")
             .select("full_name, avatar_url")
-            .eq("id", coachId)
+            .eq("id", coachProfile.user_id)
             .maybeSingle();
 
           if (profileError) throw profileError;
 
           setCoach({
-            id: coachId,
+            id: coachProfile.user_id,
+            slug: coachProfile.slug || coachSlug,
             name: profile?.full_name || "Coach",
             specialization: coachProfile.specialization || "General Coaching",
             image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
@@ -60,7 +62,7 @@ const ChatHome = () => {
     };
 
     fetchCoach();
-  }, [coachId]);
+  }, [coachSlug]);
 
   if (isLoading) {
     return (
@@ -95,7 +97,7 @@ const ChatHome = () => {
           <div className="flex items-center gap-2">
             <div 
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => navigate(`/coach/${coachId}`)}
+              onClick={() => navigate(`/${coachSlug}`)}
             >
               <img src={coach.image} alt={coach.name} className="w-8 h-8 rounded-full" />
               <div className="text-right">
@@ -119,11 +121,11 @@ const ChatHome = () => {
             src={coach.image}
             alt={coach.name}
             className="w-32 h-32 rounded-full object-cover mx-auto mb-6 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate(`/coach/${coachId}`)}
+            onClick={() => navigate(`/${coachSlug}`)}
           />
           <h1 
             className="text-3xl font-bold mb-2 cursor-pointer hover:text-primary transition-colors"
-            onClick={() => navigate(`/coach/${coachId}`)}
+            onClick={() => navigate(`/${coachSlug}`)}
           >
             {coach.name}
           </h1>
@@ -132,7 +134,7 @@ const ChatHome = () => {
           <Button 
             size="lg" 
             className="bg-gradient-primary"
-            onClick={() => navigate(`/coach/${coachId}/chat/active`)}
+            onClick={() => navigate(`/${coachSlug}/chat/active`)}
           >
             <MessageCircle className="w-5 h-5 mr-2" />
             Start Conversation

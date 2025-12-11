@@ -13,7 +13,7 @@ import {
 import { useCoachChat } from "@/hooks/useCoachChat";
 
 const ChatActive = () => {
-  const { coachId } = useParams();
+  const { coachSlug } = useParams();
   const navigate = useNavigate();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   
@@ -31,7 +31,7 @@ const ChatActive = () => {
     loadSession,
     deleteSession,
     sendMessage,
-  } = useCoachChat(coachId);
+  } = useCoachChat(coachSlug);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +145,7 @@ const ChatActive = () => {
 
             <div 
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity ml-2"
-              onClick={() => navigate(`/coach/${coachId}`)}
+              onClick={() => navigate(`/${coachSlug}`)}
             >
               <img src={coach.image} alt={coach.name} className="w-8 h-8 rounded-full" />
               <div className="text-right">
@@ -160,7 +160,7 @@ const ChatActive = () => {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate(`/coach/${coachId}`)}
+              onClick={() => navigate(`/${coachSlug}`)}
               title="Back to profile"
             >
               <Minimize2 className="w-4 h-4" />

@@ -137,6 +137,7 @@ const CoachDirectory = () => {
                 <CoachCard 
                   key={coach.id} 
                   id={coach.id}
+                  slug={coach.slug}
                   name={coach.name}
                   specialization={coach.specialization}
                   rating={coach.rating}

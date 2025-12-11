@@ -11,6 +11,29 @@ interface CoachData {
   email: string;
 }
 
+// Reserved slugs that conflict with existing routes
+const RESERVED_SLUGS = [
+  'auth', 'reset-password', 'about', 'coaches', 'syndic8', 'create-claim',
+  'coach-dashboard', 'subscriber-dashboard', 'admin-dashboard',
+  'how-it-works', 'pricing', 'success-stories', 'help', 'contact',
+  'privacy', 'directory', 'api', 'admin', 'login', 'signup', 'register',
+];
+
+// Generate a URL-friendly slug from a name
+function generateSlug(name: string): string {
+  if (!name || typeof name !== 'string') {
+    return `coach-${Date.now()}`;
+  }
+  
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 const specializations = [
   "Life Coaching", "Relationship Coaching", "Business & Leadership",
   "Health & Wellness", "Mindfulness & Meditation", "Personal Development",
@@ -129,6 +152,13 @@ serve(async (req) => {
       );
     }
 
+    // Get existing slugs to avoid duplicates
+    const { data: existingSlugs } = await supabaseAdmin
+      .from("coach_profiles")
+      .select("slug");
+    
+    const usedSlugs = new Set((existingSlugs || []).map(s => s.slug));
+
     const results = [];
 
     for (let i = 0; i < coaches.length; i++) {
@@ -155,6 +185,27 @@ serve(async (req) => {
       }
 
       try {
+        // Generate unique slug for this coach
+        let baseSlug = generateSlug(coach.fullName);
+        
+        if (!baseSlug) {
+          baseSlug = 'coach';
+        }
+        
+        if (RESERVED_SLUGS.includes(baseSlug)) {
+          baseSlug = `${baseSlug}-coach`;
+        }
+        
+        let slug = baseSlug;
+        let counter = 2;
+        while (usedSlugs.has(slug)) {
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+        
+        // Add to used slugs set to prevent duplicates within this batch
+        usedSlugs.add(slug);
+
         // Generate secure random password
         const securePassword = crypto.randomUUID() + "Aa1!";
 
@@ -199,7 +250,7 @@ serve(async (req) => {
 
         if (roleError) throw roleError;
 
-        // Create coach profile with placeholder data
+        // Create coach profile with placeholder data and slug
         const randomSpec = specializations[i % specializations.length];
         const randomPersonality = personalities[i % personalities.length];
         const randomExpertise = expertiseSets[i % expertiseSets.length];
@@ -213,6 +264,7 @@ serve(async (req) => {
           .from("coach_profiles")
           .insert({
             user_id: userId,
+            slug: slug,
             specialization: randomSpec,
             bio: bio,
             personality: randomPersonality,
@@ -229,6 +281,7 @@ serve(async (req) => {
         results.push({ 
           name: coach.fullName, 
           email: coach.email,
+          slug: slug,
           success: true 
         });
 

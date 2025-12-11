@@ -6,7 +6,7 @@ import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
 
 const CoachProfile = () => {
-  const { coachId } = useParams();
+  const { coachSlug } = useParams();
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -18,7 +18,7 @@ const CoachProfile = () => {
     isCoachLoading,
     sendMessage,
     messagesEndRef,
-  } = useCoachChat(coachId);
+  } = useCoachChat(coachSlug);
 
   // Auto-scroll when messages change
   useEffect(() => {
@@ -36,7 +36,8 @@ const CoachProfile = () => {
 
   // Fallback static data for display when coach data isn't loaded
   const displayCoach = coach || {
-    id: coachId || "1",
+    id: coachSlug || "1",
+    slug: coachSlug || "coach",
     name: "Coach",
     specialization: "General Coaching",
     image: `https://api.dicebear.com/7.x/initials/svg?seed=Coach`,
@@ -98,11 +99,11 @@ const CoachProfile = () => {
                 src={displayCoach.image}
                 alt={displayCoach.name}
                 className="w-24 h-24 rounded-full object-cover mx-auto mb-4 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => navigate(`/coach/${coachId}`)}
+                onClick={() => navigate(`/${coachSlug}`)}
               />
               <h2 
                 className="text-2xl font-bold mb-1 cursor-pointer hover:text-primary transition-colors"
-                onClick={() => navigate(`/coach/${coachId}`)}
+                onClick={() => navigate(`/${coachSlug}`)}
               >
                 {displayCoach.name}
               </h2>
@@ -174,7 +175,7 @@ const CoachProfile = () => {
                 </div>
                 <Button 
                   className="w-full mt-3 bg-gradient-primary"
-                  onClick={() => navigate(`/coach/${coachId}/chat`)}
+                  onClick={() => navigate(`/${coachSlug}/chat`)}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Try Full-Screen Chat
@@ -207,7 +208,7 @@ const CoachProfile = () => {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate(`/coach/${coachId}/chat/active`)}
+                onClick={() => navigate(`/${coachSlug}/chat/active`)}
               >
                 <Maximize2 className="w-4 h-4" />
               </Button>

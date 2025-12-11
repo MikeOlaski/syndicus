@@ -6,6 +6,7 @@ import { Star, MessageSquare, ExternalLink } from "lucide-react";
 
 interface CoachCardProps {
   id: string;
+  slug: string;
   name: string;
   specialization: string;
   rating: number;
@@ -19,6 +20,7 @@ interface CoachCardProps {
 
 const CoachCard = ({
   id,
+  slug,
   name,
   specialization,
   rating,
@@ -40,12 +42,12 @@ const CoachCard = ({
             src={image}
             alt={name}
             className="w-16 h-16 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate(`/coach/${id}`)}
+            onClick={() => navigate(`/${slug}`)}
           />
           <div className="flex-1">
             <h3 
               className="font-bold text-lg mb-1 cursor-pointer hover:text-primary transition-colors"
-              onClick={() => navigate(`/coach/${id}`)}
+              onClick={() => navigate(`/${slug}`)}
             >
               {name}
             </h3>
@@ -77,7 +79,7 @@ const CoachCard = ({
 
         <Button 
           className={`w-full ${buttonClass}`}
-          onClick={() => navigate(`/coach/${id}/chat`)}
+          onClick={() => navigate(`/${slug}/chat`)}
         >
           <MessageSquare className="w-4 h-4 mr-2" />
           Try Chatbot

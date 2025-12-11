@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Coach {
   id: string;
+  slug: string;
   name: string;
   email: string;
   specialization: string;
@@ -24,7 +25,7 @@ export const useCoaches = () => {
       // Select only needed columns, excluding sensitive data like webhook_url
       const { data: coachProfiles, error: coachError } = await supabase
         .from("coach_profiles")
-        .select("user_id, specialization, rating, total_sessions, bio, personality, expertise, hourly_rate, is_verified")
+        .select("user_id, slug, specialization, rating, total_sessions, bio, personality, expertise, hourly_rate, is_verified")
         .eq("is_verified", true)
         .eq("show_on_homepage", true)
         .order("rating", { ascending: false });
@@ -57,6 +58,7 @@ export const useCoaches = () => {
         
         return {
           id: coach.user_id,
+          slug: coach.slug || coach.user_id, // Fallback to user_id if no slug
           name: profile?.full_name || "Coach",
           email: "",
           specialization: coach.specialization || "General Coaching",

@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface CoachData {
   id: string;
+  slug: string;
   name: string;
   specialization: string;
   image: string;
@@ -19,13 +20,13 @@ interface Message {
 
 interface ChatSession {
   sessionId: string;
-  coachId: string;
+  coachId: string; // Always UUID for internal storage
   createdAt: string;
   lastMessage: string;
   messages: Message[];
 }
 
-// LocalStorage helper functions
+// LocalStorage helper functions - always use UUID (coachId) for keys
 const getStorageKey = (coachId: string) => `chat_sessions_${coachId}`;
 const getCurrentSessionKey = (coachId: string) => `current_session_${coachId}`;
 
@@ -44,7 +45,10 @@ const generateSessionId = () => {
   ).join('');
 };
 
-export const useCoachChat = (coachId: string | undefined) => {
+/**
+ * Hook for managing coach chat - accepts slug and resolves to UUID internally
+ */
+export const useCoachChat = (coachSlug: string | undefined) => {
   const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -53,6 +57,7 @@ export const useCoachChat = (coachId: string | undefined) => {
   const [isCoachLoading, setIsCoachLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [coachId, setCoachId] = useState<string>(""); // The UUID
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -63,7 +68,7 @@ export const useCoachChat = (coachId: string | undefined) => {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
-  // Save messages to localStorage whenever they change
+  // Save messages to localStorage whenever they change (using UUID coachId)
   useEffect(() => {
     if (!coachId || !sessionId || messages.length === 0) return;
     
@@ -107,64 +112,75 @@ export const useCoachChat = (coachId: string | undefined) => {
     }
   }, [coach?.name, coachId]);
 
+  // Fetch coach by slug and resolve to UUID
   useEffect(() => {
     const fetchCoach = async () => {
-      if (!coachId) return;
+      if (!coachSlug) return;
       
       try {
+        // First, try to find coach by slug
         const { data: coachProfile, error: coachError } = await supabase
           .from("coach_profiles")
-          .select("*")
-          .eq("user_id", coachId)
+          .select("user_id, slug, specialization, personality, webhook_url")
+          .eq("slug", coachSlug)
           .maybeSingle();
 
         if (coachError) throw coachError;
 
-        if (coachProfile) {
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("full_name, avatar_url")
-            .eq("id", coachId)
-            .maybeSingle();
+        if (!coachProfile) {
+          console.error("Coach not found for slug:", coachSlug);
+          setIsCoachLoading(false);
+          return;
+        }
 
-          if (profileError) throw profileError;
+        const resolvedCoachId = coachProfile.user_id;
+        setCoachId(resolvedCoachId);
 
-          const coachData: CoachData = {
-            id: coachId,
-            name: profile?.full_name || "Coach",
-            specialization: coachProfile.specialization || "General Coaching",
-            image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
-            webhookUrl: coachProfile.webhook_url,
+        // Fetch user profile
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("id", resolvedCoachId)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        const coachData: CoachData = {
+          id: resolvedCoachId,
+          slug: coachProfile.slug || coachSlug,
+          name: profile?.full_name || "Coach",
+          specialization: coachProfile.specialization || "General Coaching",
+          image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
+          webhookUrl: coachProfile.webhook_url,
+        };
+        setCoach(coachData);
+
+        // Load existing sessions using UUID
+        const existingSessions = getSessions(resolvedCoachId);
+        setSessions(existingSessions);
+
+        // Check for current session or create new one
+        const currentSessionId = localStorage.getItem(getCurrentSessionKey(resolvedCoachId));
+        const existingSession = existingSessions.find(s => s.sessionId === currentSessionId);
+
+        if (existingSession && existingSession.messages.length > 0) {
+          // Resume existing session
+          setSessionId(existingSession.sessionId);
+          setMessages(existingSession.messages);
+        } else {
+          // Create new session
+          const newSessionId = generateSessionId();
+          setSessionId(newSessionId);
+          
+          const welcomeMessage: Message = {
+            id: "welcome",
+            role: "assistant",
+            content: `Hello! I'm ${coachData.name}'s AI coaching assistant. I'm here to help you. What can I assist you with today?`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           };
-          setCoach(coachData);
-
-          // Load existing sessions
-          const existingSessions = getSessions(coachId);
-          setSessions(existingSessions);
-
-          // Check for current session or create new one
-          const currentSessionId = localStorage.getItem(getCurrentSessionKey(coachId));
-          const existingSession = existingSessions.find(s => s.sessionId === currentSessionId);
-
-          if (existingSession && existingSession.messages.length > 0) {
-            // Resume existing session
-            setSessionId(existingSession.sessionId);
-            setMessages(existingSession.messages);
-          } else {
-            // Create new session
-            const newSessionId = generateSessionId();
-            setSessionId(newSessionId);
-            
-            const welcomeMessage: Message = {
-              id: "welcome",
-              role: "assistant",
-              content: `Hello! I'm ${coachData.name}'s AI coaching assistant. I'm here to help you. What can I assist you with today?`,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            
-            setMessages([welcomeMessage]);
-            localStorage.setItem(getCurrentSessionKey(coachId), newSessionId);
-          }
+          
+          setMessages([welcomeMessage]);
+          localStorage.setItem(getCurrentSessionKey(resolvedCoachId), newSessionId);
         }
       } catch (error) {
         console.error("Error fetching coach:", error);
@@ -174,7 +190,7 @@ export const useCoachChat = (coachId: string | undefined) => {
     };
 
     fetchCoach();
-  }, [coachId]);
+  }, [coachSlug]);
 
   const loadSession = useCallback((session: ChatSession) => {
     setSessionId(session.sessionId);
