@@ -146,7 +146,6 @@ const CoachDirectory = () => {
                   tags={coach.tags}
                   image={coach.image}
                   variant={coach.variant}
-                  webhookUrl={coach.webhookUrl}
                 />
               ))}
             </div>

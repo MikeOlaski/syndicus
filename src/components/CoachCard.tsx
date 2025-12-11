@@ -15,7 +15,6 @@ interface CoachCardProps {
   tags: string[];
   image: string;
   variant?: "primary" | "secondary";
-  webhookUrl?: string;
 }
 
 const CoachCard = ({

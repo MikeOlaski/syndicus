@@ -3,9 +3,6 @@ project_id = "hmdhiutehhxmryiowmgm"
 [functions.import-coaches]
 verify_jwt = true
 
-[functions.run-import]
-verify_jwt = false
-
 [functions.create-coach]
 verify_jwt = false
 
