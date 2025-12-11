@@ -27,13 +27,47 @@ const RESERVED_SLUGS = [
   'privacy', 'directory', 'api', 'admin', 'login', 'signup', 'register',
 ];
 
+// Diacritics/accented characters to ASCII mapping
+const DIACRITICS_MAP: Record<string, string> = {
+  // Slovak/Czech
+  'á': 'a', 'ä': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ĺ': 'l', 
+  'ľ': 'l', 'ň': 'n', 'ó': 'o', 'ô': 'o', 'ŕ': 'r', 'ř': 'r', 'š': 's', 'ť': 't', 
+  'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z',
+  // German
+  'ö': 'o', 'ü': 'u', 'ß': 'ss',
+  // French
+  'à': 'a', 'â': 'a', 'æ': 'ae', 'ç': 'c', 'è': 'e', 'ê': 'e', 'ë': 'e', 
+  'î': 'i', 'ï': 'i', 'ò': 'o', 'œ': 'oe', 'ù': 'u', 'û': 'u', 'ÿ': 'y',
+  // Spanish/Portuguese
+  'ã': 'a', 'ñ': 'n', 'õ': 'o',
+  // Polish
+  'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ś': 's', 'ź': 'z', 'ż': 'z',
+  // Nordic
+  'å': 'a', 'ø': 'o',
+  // Turkish
+  'ğ': 'g', 'ı': 'i', 'ş': 's',
+  // Uppercase versions
+  'Á': 'a', 'Ä': 'a', 'Č': 'c', 'Ď': 'd', 'É': 'e', 'Ě': 'e', 'Í': 'i', 'Ĺ': 'l',
+  'Ľ': 'l', 'Ň': 'n', 'Ó': 'o', 'Ô': 'o', 'Ŕ': 'r', 'Ř': 'r', 'Š': 's', 'Ť': 't',
+  'Ú': 'u', 'Ů': 'u', 'Ý': 'y', 'Ž': 'z', 'Ö': 'o', 'Ü': 'u', 'À': 'a', 'Â': 'a',
+  'Æ': 'ae', 'Ç': 'c', 'È': 'e', 'Ê': 'e', 'Ë': 'e', 'Î': 'i', 'Ï': 'i', 'Ò': 'o',
+  'Œ': 'oe', 'Ù': 'u', 'Û': 'u', 'Ÿ': 'y', 'Ã': 'a', 'Ñ': 'n', 'Õ': 'o', 'Ą': 'a',
+  'Ć': 'c', 'Ę': 'e', 'Ł': 'l', 'Ń': 'n', 'Ś': 's', 'Ź': 'z', 'Ż': 'z', 'Å': 'a',
+  'Ø': 'o', 'Ğ': 'g', 'İ': 'i', 'Ş': 's',
+};
+
+// Transliterate diacritics to ASCII
+function transliterate(str: string): string {
+  return str.split('').map(char => DIACRITICS_MAP[char] || char).join('');
+}
+
 // Generate a URL-friendly slug from a name
 function generateSlug(name: string): string {
   if (!name || typeof name !== 'string') {
     return `coach-${Date.now()}`;
   }
   
-  return name
+  return transliterate(name)
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, '')
@@ -212,28 +246,76 @@ Deno.serve(async (req) => {
 
     console.log(`Generated slug: ${slug}`);
 
-    // Step 1: Create the auth user
+    // Step 1: Try to create the auth user, or find existing one
+    let newUserId: string;
+    let isExistingUser = false;
+
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: userPassword,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: true,
       user_metadata: {
         full_name: fullName,
       },
     });
 
     if (authError) {
-      console.error("Error creating auth user:", authError);
-      return new Response(
-        JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Check if the error is because the email already exists
+      if (authError.message.includes("already been registered") || authError.code === "email_exists") {
+        console.log(`User with email ${email} already exists, checking if they have a coach profile...`);
+        
+        // Look up the existing user by email
+        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        if (listError) {
+          console.error("Error listing users:", listError);
+          return new Response(
+            JSON.stringify({ error: "Failed to check existing users" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const existingUser = existingUsers.users.find(u => u.email === email);
+        if (!existingUser) {
+          return new Response(
+            JSON.stringify({ error: "User exists but could not be found" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Check if this user already has a coach profile
+        const { data: existingCoachProfile } = await supabaseAdmin
+          .from("coach_profiles")
+          .select("id, slug")
+          .eq("user_id", existingUser.id)
+          .maybeSingle();
+
+        if (existingCoachProfile) {
+          return new Response(
+            JSON.stringify({ 
+              error: `A coach profile already exists for ${email}`,
+              existingSlug: existingCoachProfile.slug
+            }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // User exists but doesn't have a coach profile - we can proceed
+        newUserId = existingUser.id;
+        isExistingUser = true;
+        console.log(`Using existing user ID: ${newUserId}`);
+      } else {
+        console.error("Error creating auth user:", authError);
+        return new Response(
+          JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      newUserId = authData.user.id;
+      console.log(`Created auth user with ID: ${newUserId}`);
     }
 
-    const newUserId = authData.user.id;
-    console.log(`Created auth user with ID: ${newUserId}`);
-
-    // Step 2: Update the profiles table (trigger should have created it, but let's update with full_name)
+    // Step 2: Update the profiles table
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -244,26 +326,36 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error("Error updating profile:", profileError);
-      // Don't fail the whole operation, the profile might not exist yet
+      // Don't fail the whole operation
     }
 
-    // Step 3: Add the coach role
-    const { error: roleInsertError } = await supabaseAdmin
+    // Step 3: Add the coach role (if not already present)
+    const { data: existingRole } = await supabaseAdmin
       .from("user_roles")
-      .insert({
-        user_id: newUserId,
-        role: "coach",
-      });
+      .select("id")
+      .eq("user_id", newUserId)
+      .eq("role", "coach")
+      .maybeSingle();
 
-    if (roleInsertError) {
-      console.error("Error inserting role:", roleInsertError);
-      return new Response(
-        JSON.stringify({ error: `Failed to assign coach role: ${roleInsertError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!existingRole) {
+      const { error: roleInsertError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({
+          user_id: newUserId,
+          role: "coach",
+        });
+
+      if (roleInsertError) {
+        console.error("Error inserting role:", roleInsertError);
+        return new Response(
+          JSON.stringify({ error: `Failed to assign coach role: ${roleInsertError.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.log(`Assigned coach role to user: ${newUserId}`);
+    } else {
+      console.log(`User already has coach role: ${newUserId}`);
     }
-
-    console.log(`Assigned coach role to user: ${newUserId}`);
 
     // Step 4: Create the coach profile with slug
     const { data: coachProfileData, error: coachProfileError } = await supabaseAdmin
@@ -278,7 +370,7 @@ Deno.serve(async (req) => {
         expertise: expertise || null,
         status: status,
         is_verified: isVerified,
-        is_claimed: false,
+        is_claimed: isExistingUser, // If existing user, mark as claimed
         rating: 0,
         total_sessions: 0,
         webhook_url: webhookUrl || null,
@@ -307,18 +399,22 @@ Deno.serve(async (req) => {
         slug,
         status,
         is_verified: isVerified,
+        used_existing_user: isExistingUser,
       },
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Coach account created successfully for ${fullName}`,
+        message: isExistingUser 
+          ? `Coach profile created for existing user ${fullName}` 
+          : `Coach account created successfully for ${fullName}`,
         userId: newUserId,
         coachProfileId: coachProfileData?.id,
         email,
         slug,
-        temporaryPassword: password ? undefined : userPassword, // Only return if auto-generated
+        temporaryPassword: (!isExistingUser && !password) ? userPassword : undefined,
+        usedExistingUser: isExistingUser,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
