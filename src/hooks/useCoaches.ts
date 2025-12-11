@@ -15,16 +15,16 @@ export interface Coach {
   variant: "primary" | "secondary";
   hourlyRate?: number;
   isVerified: boolean;
-  webhookUrl?: string;
 }
 
 export const useCoaches = () => {
   return useQuery({
     queryKey: ["coaches"],
     queryFn: async () => {
+      // Select only needed columns, excluding sensitive data like webhook_url
       const { data: coachProfiles, error: coachError } = await supabase
         .from("coach_profiles")
-        .select("*")
+        .select("user_id, specialization, rating, total_sessions, bio, personality, expertise, hourly_rate, is_verified")
         .eq("is_verified", true)
         .eq("show_on_homepage", true)
         .order("rating", { ascending: false });
@@ -73,7 +73,6 @@ export const useCoaches = () => {
           variant: index % 3 === 0 ? "primary" : "secondary",
           hourlyRate: coach.hourly_rate || undefined,
           isVerified: coach.is_verified || false,
-          webhookUrl: coach.webhook_url || undefined,
         };
       });
     },
