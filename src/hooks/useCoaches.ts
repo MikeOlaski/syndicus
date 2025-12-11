@@ -21,7 +21,9 @@ export interface Coach {
 export const useCoaches = () => {
   return useQuery({
     queryKey: ["coaches"],
+    staleTime: 0, // Always refetch to ensure latest slug data
     queryFn: async () => {
+      console.log("[useCoaches] Fetching coaches with slugs...");
       // Select only needed columns, excluding sensitive data like webhook_url
       const { data: coachProfiles, error: coachError } = await supabase
         .from("coach_profiles")
@@ -55,6 +57,7 @@ export const useCoaches = () => {
 
       return (coachProfiles || []).map((coach, index): Coach => {
         const profile = profilesById.get(coach.user_id);
+        console.log(`[useCoaches] Coach ${profile?.full_name}: slug = ${coach.slug}`);
         
         return {
           id: coach.user_id,
