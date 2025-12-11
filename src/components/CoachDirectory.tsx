@@ -23,11 +23,27 @@ const CoachDirectory = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [filteredCoaches, setFilteredCoaches] = useState(coaches);
 
+  // Keep filteredCoaches in sync with coaches data when it loads/changes
   useEffect(() => {
-    if (coaches.length > 0 && filteredCoaches.length === 0) {
-      setFilteredCoaches(coaches);
+    if (coaches.length > 0) {
+      if (selectedCategory === "All" && !searchQuery) {
+        setFilteredCoaches(coaches);
+      } else if (selectedCategory !== "All") {
+        const filtered = coaches.filter((coach) =>
+          coach.tags.some((tag) => tag.toLowerCase() === selectedCategory.toLowerCase())
+        );
+        setFilteredCoaches(filtered);
+      } else if (searchQuery) {
+        const filtered = coaches.filter(
+          (coach) =>
+            coach.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            coach.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            coach.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        setFilteredCoaches(filtered);
+      }
     }
-  }, [coaches, filteredCoaches.length]);
+  }, [coaches, selectedCategory, searchQuery]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
