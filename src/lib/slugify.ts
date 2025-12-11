@@ -23,19 +23,56 @@ export const RESERVED_SLUGS = [
   'register',
 ];
 
+// Diacritics/accented characters to ASCII mapping
+const DIACRITICS_MAP: Record<string, string> = {
+  // Slovak/Czech
+  'á': 'a', 'ä': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ĺ': 'l', 
+  'ľ': 'l', 'ň': 'n', 'ó': 'o', 'ô': 'o', 'ŕ': 'r', 'ř': 'r', 'š': 's', 'ť': 't', 
+  'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z',
+  // German
+  'ö': 'o', 'ü': 'u', 'ß': 'ss',
+  // French
+  'à': 'a', 'â': 'a', 'æ': 'ae', 'ç': 'c', 'è': 'e', 'ê': 'e', 'ë': 'e', 
+  'î': 'i', 'ï': 'i', 'ò': 'o', 'œ': 'oe', 'ù': 'u', 'û': 'u', 'ÿ': 'y',
+  // Spanish/Portuguese
+  'ã': 'a', 'ñ': 'n', 'õ': 'o',
+  // Polish
+  'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ś': 's', 'ź': 'z', 'ż': 'z',
+  // Nordic
+  'å': 'a', 'ø': 'o',
+  // Turkish
+  'ğ': 'g', 'ı': 'i', 'ş': 's',
+  // Uppercase versions
+  'Á': 'a', 'Ä': 'a', 'Č': 'c', 'Ď': 'd', 'É': 'e', 'Ě': 'e', 'Í': 'i', 'Ĺ': 'l',
+  'Ľ': 'l', 'Ň': 'n', 'Ó': 'o', 'Ô': 'o', 'Ŕ': 'r', 'Ř': 'r', 'Š': 's', 'Ť': 't',
+  'Ú': 'u', 'Ů': 'u', 'Ý': 'y', 'Ž': 'z', 'Ö': 'o', 'Ü': 'u', 'À': 'a', 'Â': 'a',
+  'Æ': 'ae', 'Ç': 'c', 'È': 'e', 'Ê': 'e', 'Ë': 'e', 'Î': 'i', 'Ï': 'i', 'Ò': 'o',
+  'Œ': 'oe', 'Ù': 'u', 'Û': 'u', 'Ÿ': 'y', 'Ã': 'a', 'Ñ': 'n', 'Õ': 'o', 'Ą': 'a',
+  'Ć': 'c', 'Ę': 'e', 'Ł': 'l', 'Ń': 'n', 'Ś': 's', 'Ź': 'z', 'Ż': 'z', 'Å': 'a',
+  'Ø': 'o', 'Ğ': 'g', 'İ': 'i', 'Ş': 's',
+};
+
+/**
+ * Transliterates diacritics/accented characters to ASCII equivalents
+ */
+function transliterate(str: string): string {
+  return str.split('').map(char => DIACRITICS_MAP[char] || char).join('');
+}
+
 /**
  * Generates a URL-friendly slug from a name
  * e.g., "Mike Olaski" -> "mike-olaski"
+ * e.g., "Ľuboš Džubák" -> "lubos-dzubak"
  */
 export function generateSlug(name: string): string {
   if (!name || typeof name !== 'string') {
     return `coach-${Date.now()}`;
   }
   
-  return name
+  return transliterate(name)
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/[^a-z0-9\s-]/g, '') // Remove remaining special characters
     .replace(/\s+/g, '-')          // Replace spaces with hyphens
     .replace(/-+/g, '-')           // Replace multiple hyphens with single
     .replace(/^-|-$/g, '');        // Remove leading/trailing hyphens
