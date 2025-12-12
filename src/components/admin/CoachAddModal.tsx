@@ -13,8 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { FormattedMessage } from "@/components/ui/formatted-message";
 
-const STORAGE_KEY = "coach-chat-messages";
-const SESSION_KEY = "coach-chat-session-id";
+const STORAGE_KEY = "persona-chat-messages";
+const SESSION_KEY = "persona-chat-session-id";
 
 const getOrCreateSessionId = (): string => {
   let sessionId = localStorage.getItem(SESSION_KEY);
@@ -22,6 +22,12 @@ const getOrCreateSessionId = (): string => {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     localStorage.setItem(SESSION_KEY, sessionId);
   }
+  return sessionId;
+};
+
+const createNewSessionId = (): string => {
+  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  localStorage.setItem(SESSION_KEY, sessionId);
   return sessionId;
 };
 
@@ -42,7 +48,7 @@ export const CoachAddModal = ({
   onSuccess,
 }: CoachAddModalProps) => {
   const { toast } = useToast();
-  const [sessionId] = useState(() => getOrCreateSessionId());
+  const [sessionId, setSessionId] = useState(() => getOrCreateSessionId());
   const [messages, setMessages] = useState<Message[]>(() => {
     // Load messages from localStorage
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -109,7 +115,8 @@ export const CoachAddModal = ({
 
   const handleNewChat = () => {
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(SESSION_KEY);
+    const newSessionId = createNewSessionId();
+    setSessionId(newSessionId);
     setMessages([]);
     setInput("");
     toast({
