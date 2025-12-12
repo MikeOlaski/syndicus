@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send, Bot, User, RotateCcw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { FormattedMessage } from "@/components/ui/formatted-message";
 
 const STORAGE_KEY = "coach-chat-messages";
 const SESSION_KEY = "coach-chat-session-id";
@@ -247,19 +247,7 @@ export const CoachAddModal = ({
                     }`}
                   >
                     {message.role === "assistant" ? (
-                      <div className="text-sm prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_strong]:font-semibold">
-                        <ReactMarkdown
-                          components={{
-                            a: ({ href, children }) => (
-                              <a href={href} target="_blank" rel="noopener noreferrer">
-                                {children}
-                              </a>
-                            ),
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
+                      <FormattedMessage content={message.content} className="text-sm" />
                     ) : (
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     )}
