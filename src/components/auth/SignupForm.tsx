@@ -99,7 +99,7 @@ export const SignupForm = ({ role }: SignupFormProps) => {
       if (role === "coach") {
         navigate("/coach-dashboard");
       } else {
-        navigate("/");
+        navigate("/subscriber-onboarding");
       }
     } catch (error: any) {
       toast({
