@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2 } from "lucide-react";
+import Header from "@/components/Header";
 import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
 
@@ -61,33 +62,7 @@ const CoachProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-gradient-primary flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">Syndic.us</h1>
-              <p className="text-xs text-muted-foreground">Syndicated Digital Twin PersonaBots</p>
-            </div>
-          </a>
-          <nav className="hidden md:flex items-center gap-6 text-sm">
-            <a href="/" className="hover:text-primary">About</a>
-            <a href="/coaches" className="hover:text-primary">Coaches</a>
-            <a href="/syndic8" className="hover:text-primary">Syndic8</a>
-            <a href="/create-claim" className="hover:text-primary">Create or Claim</a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">Join as Subscriber</Button>
-            <Button size="sm" className="bg-gradient-primary">Join as Coach</Button>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Users className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
