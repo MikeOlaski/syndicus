@@ -12,6 +12,14 @@ interface CoachData {
   image: string;
   webhookUrl: string | null;
   isClaimed: boolean;
+  bio: string | null;
+  personality: string | null;
+  expertise: string[] | null;
+  hourlyRate: number | null;
+  websiteUrl: string | null;
+  twitterUrl: string | null;
+  linkedinUrl: string | null;
+  instagramUrl: string | null;
 }
 
 interface Message {
@@ -132,7 +140,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         // First, try to find coach by slug
         const { data: coachProfile, error: coachError } = await supabase
           .from("coach_profiles")
-          .select("user_id, slug, specialization, personality, webhook_url, is_claimed")
+          .select("user_id, slug, specialization, personality, webhook_url, is_claimed, bio, expertise, hourly_rate, website_url, twitter_url, linkedin_url, instagram_url")
           .eq("slug", coachSlug)
           .maybeSingle();
 
@@ -164,6 +172,14 @@ export const useCoachChat = (coachSlug: string | undefined) => {
           image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
           webhookUrl: coachProfile.webhook_url,
           isClaimed: coachProfile.is_claimed || false,
+          bio: coachProfile.bio,
+          personality: coachProfile.personality,
+          expertise: coachProfile.expertise,
+          hourlyRate: coachProfile.hourly_rate,
+          websiteUrl: coachProfile.website_url,
+          twitterUrl: coachProfile.twitter_url,
+          linkedinUrl: coachProfile.linkedin_url,
+          instagramUrl: coachProfile.instagram_url,
         };
         setCoach(coachData);
 

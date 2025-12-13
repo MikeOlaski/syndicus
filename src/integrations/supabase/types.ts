@@ -80,9 +80,11 @@ export type Database = {
           expertise: string[] | null
           hourly_rate: number | null
           id: string
+          instagram_url: string | null
           is_claimed: boolean | null
           is_verified: boolean | null
           last_activity_at: string | null
+          linkedin_url: string | null
           personality: string | null
           rating: number | null
           show_on_homepage: boolean | null
@@ -90,9 +92,11 @@ export type Database = {
           specialization: string | null
           status: Database["public"]["Enums"]["coach_status"]
           total_sessions: number | null
+          twitter_url: string | null
           updated_at: string
           user_id: string
           webhook_url: string | null
+          website_url: string | null
         }
         Insert: {
           bio?: string | null
@@ -100,9 +104,11 @@ export type Database = {
           expertise?: string[] | null
           hourly_rate?: number | null
           id?: string
+          instagram_url?: string | null
           is_claimed?: boolean | null
           is_verified?: boolean | null
           last_activity_at?: string | null
+          linkedin_url?: string | null
           personality?: string | null
           rating?: number | null
           show_on_homepage?: boolean | null
@@ -110,9 +116,11 @@ export type Database = {
           specialization?: string | null
           status?: Database["public"]["Enums"]["coach_status"]
           total_sessions?: number | null
+          twitter_url?: string | null
           updated_at?: string
           user_id: string
           webhook_url?: string | null
+          website_url?: string | null
         }
         Update: {
           bio?: string | null
@@ -120,9 +128,11 @@ export type Database = {
           expertise?: string[] | null
           hourly_rate?: number | null
           id?: string
+          instagram_url?: string | null
           is_claimed?: boolean | null
           is_verified?: boolean | null
           last_activity_at?: string | null
+          linkedin_url?: string | null
           personality?: string | null
           rating?: number | null
           show_on_homepage?: boolean | null
@@ -130,9 +140,11 @@ export type Database = {
           specialization?: string | null
           status?: Database["public"]["Enums"]["coach_status"]
           total_sessions?: number | null
+          twitter_url?: string | null
           updated_at?: string
           user_id?: string
           webhook_url?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2, Mail, Calendar } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2, Mail, Calendar, Globe, Twitter, Linkedin, Instagram } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIProfileAssistant } from "@/components/AIProfileAssistant";
@@ -20,6 +20,10 @@ interface CoachProfile {
   expertise: string[] | null;
   hourly_rate: number | null;
   status: "admin_setup" | "coach_claimed" | "onboarding_started" | "onboarding_completed" | "knowledge_base_setup" | "active" | "inactive";
+  website_url: string | null;
+  twitter_url: string | null;
+  linkedin_url: string | null;
+  instagram_url: string | null;
 }
 
 const CoachProfileSetup = () => {
@@ -39,7 +43,11 @@ const CoachProfileSetup = () => {
     personality: "",
     expertise: [],
     hourly_rate: null,
-    status: "admin_setup"
+    status: "admin_setup",
+    website_url: "",
+    twitter_url: "",
+    linkedin_url: "",
+    instagram_url: ""
   });
   const [expertiseInput, setExpertiseInput] = useState("");
   const [currentTab, setCurrentTab] = useState("overview");
@@ -90,7 +98,11 @@ const CoachProfileSetup = () => {
           personality: data.personality || "",
           expertise: data.expertise || [],
           hourly_rate: data.hourly_rate || null,
-          status: data.status || "admin_setup"
+          status: data.status || "admin_setup",
+          website_url: data.website_url || "",
+          twitter_url: data.twitter_url || "",
+          linkedin_url: data.linkedin_url || "",
+          instagram_url: data.instagram_url || ""
         });
       } else {
         // No coach profile found - user might not have coach setup yet
@@ -241,7 +253,11 @@ const CoachProfileSetup = () => {
           expertise: profile.expertise,
           hourly_rate: profile.hourly_rate,
           status: newStatus,
-          last_activity_at: new Date().toISOString()
+          last_activity_at: new Date().toISOString(),
+          website_url: profile.website_url || null,
+          twitter_url: profile.twitter_url || null,
+          linkedin_url: profile.linkedin_url || null,
+          instagram_url: profile.instagram_url || null
         })
         .eq("user_id", user.id);
 
@@ -624,6 +640,71 @@ const CoachProfileSetup = () => {
                       Generate
                     </Button>
                   </div>
+                </div>
+
+                {/* Website & Socials Section */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    Website & Socials
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="website_url" className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        Website URL
+                      </Label>
+                      <Input
+                        id="website_url"
+                        type="url"
+                        placeholder="https://yourwebsite.com"
+                        value={profile.website_url || ""}
+                        onChange={(e) => setProfile({ ...profile, website_url: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter_url" className="flex items-center gap-2">
+                        <Twitter className="w-4 h-4 text-muted-foreground" />
+                        Twitter / X
+                      </Label>
+                      <Input
+                        id="twitter_url"
+                        type="url"
+                        placeholder="https://twitter.com/username"
+                        value={profile.twitter_url || ""}
+                        onChange={(e) => setProfile({ ...profile, twitter_url: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin_url" className="flex items-center gap-2">
+                        <Linkedin className="w-4 h-4 text-muted-foreground" />
+                        LinkedIn
+                      </Label>
+                      <Input
+                        id="linkedin_url"
+                        type="url"
+                        placeholder="https://linkedin.com/in/username"
+                        value={profile.linkedin_url || ""}
+                        onChange={(e) => setProfile({ ...profile, linkedin_url: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram_url" className="flex items-center gap-2">
+                        <Instagram className="w-4 h-4 text-muted-foreground" />
+                        Instagram
+                      </Label>
+                      <Input
+                        id="instagram_url"
+                        type="url"
+                        placeholder="https://instagram.com/username"
+                        value={profile.instagram_url || ""}
+                        onChange={(e) => setProfile({ ...profile, instagram_url: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    These links will appear on your public profile.
+                  </p>
                 </div>
               </div>
             </Card>

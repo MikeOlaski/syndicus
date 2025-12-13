@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2, Shield } from "lucide-react";
+import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2, Shield, Globe, Twitter, Linkedin, Instagram } from "lucide-react";
 import Header from "@/components/Header";
 import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
@@ -57,20 +57,18 @@ const CoachProfile = () => {
     image: `https://api.dicebear.com/7.x/initials/svg?seed=Coach`,
   };
 
-  // Static profile data for the sidebar
+  // Use dynamic data from coach when available
   const profileData = {
     rating: 4.9,
     clients: 280,
-    personality: "Strategic, analytical, and empowering",
-    about: `${displayCoach.name} is a renowned coach with extensive experience helping clients achieve their goals. Their AI-powered coaching approach combines expertise with personalized insights to help you succeed.`,
-    specializations: ["Leadership", "Strategy", "Growth"],
-    achievements: [
-      "Helped 50+ clients achieve their goals",
-      "Expert in their field",
-      "Featured in industry publications",
-      "Dedicated to continuous improvement"
-    ],
-    hourlyRate: 200
+    personality: coach?.personality || "Strategic, analytical, and empowering",
+    about: coach?.bio || `${displayCoach.name} is a renowned coach with extensive experience helping clients achieve their goals. Their AI-powered coaching approach combines expertise with personalized insights to help you succeed.`,
+    specializations: coach?.expertise || ["Leadership", "Strategy", "Growth"],
+    hourlyRate: coach?.hourlyRate || 200,
+    websiteUrl: coach?.websiteUrl,
+    twitterUrl: coach?.twitterUrl,
+    linkedinUrl: coach?.linkedinUrl,
+    instagramUrl: coach?.instagramUrl,
   };
 
   return (
@@ -128,19 +126,58 @@ const CoachProfile = () => {
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-bold mb-3">Achievements</h3>
-                <ul className="space-y-2">
-                  {profileData.achievements.map((achievement, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                      </div>
-                      <span className="text-muted-foreground">{achievement}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {/* Website & Socials */}
+              {(profileData.websiteUrl || profileData.twitterUrl || profileData.linkedinUrl || profileData.instagramUrl) && (
+                <div>
+                  <h3 className="font-bold mb-3">Website & Socials</h3>
+                  <div className="space-y-2">
+                    {profileData.websiteUrl && (
+                      <a 
+                        href={profileData.websiteUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span className="truncate">{profileData.websiteUrl.replace(/^https?:\/\//, '')}</span>
+                      </a>
+                    )}
+                    {profileData.twitterUrl && (
+                      <a 
+                        href={profileData.twitterUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Twitter className="w-4 h-4" />
+                        <span className="truncate">Twitter / X</span>
+                      </a>
+                    )}
+                    {profileData.linkedinUrl && (
+                      <a 
+                        href={profileData.linkedinUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Linkedin className="w-4 h-4" />
+                        <span className="truncate">LinkedIn</span>
+                      </a>
+                    )}
+                    {profileData.instagramUrl && (
+                      <a 
+                        href={profileData.instagramUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Instagram className="w-4 h-4" />
+                        <span className="truncate">Instagram</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4 border-t space-y-3">
                 {/* Claim Coach Button - only show for unclaimed coaches */}
