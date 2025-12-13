@@ -55,10 +55,10 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     { title: "Dashboard", url: "/coach-dashboard", icon: LayoutDashboard },
     { title: "AI Assistant", url: "/coach-dashboard/chat", icon: MessageSquare },
     { title: "Templates", url: "/coach-dashboard/templates", icon: FileText },
-    { title: "My Twin", url: "/coach-dashboard/my-twin", icon: User },
+    { title: "My Twin", url: "/coach-dashboard/my-twin", icon: Briefcase },
     { title: "Conversations", url: "/coach-dashboard/conversations", icon: MessagesSquare },
     { title: "My Subscribers", url: "/coach-dashboard/subscribers", icon: Users },
-    { title: "Profile", url: "/coach-dashboard/profile", icon: User },
+    { title: "Profile", url: "/coach-dashboard/profile", icon: Settings },
   ];
 
   const adminItems = [
