@@ -9,6 +9,7 @@ import { SubscribeButton } from "@/components/SubscribeButton";
 import { MessageLimitBanner } from "@/components/MessageLimitBanner";
 import { GuestLimitModal } from "@/components/GuestLimitModal";
 import { GuestMessageBanner } from "@/components/GuestMessageBanner";
+import { SubscriptionLimitModal } from "@/components/SubscriptionLimitModal";
 
 const CoachProfile = () => {
   const { coachSlug } = useParams();
@@ -26,6 +27,9 @@ const CoachProfile = () => {
     guestLimit,
     showGuestLimitModal,
     setShowGuestLimitModal,
+    showSubscriptionLimitModal,
+    setShowSubscriptionLimitModal,
+    subscriptionStatus,
   } = useCoachChat(coachSlug);
 
   // Auto-scroll when messages change
@@ -328,6 +332,13 @@ const CoachProfile = () => {
         open={showGuestLimitModal}
         onOpenChange={setShowGuestLimitModal}
         coachName={displayCoach.name}
+      />
+
+      {/* Subscription Limit Modal */}
+      <SubscriptionLimitModal
+        open={showSubscriptionLimitModal}
+        onOpenChange={setShowSubscriptionLimitModal}
+        tier={subscriptionStatus?.tier}
       />
     </div>
   );

@@ -98,7 +98,7 @@ const Pricing = () => {
     {
       name: "Plus Subscriber",
       tier: "plus",
-      price: "$27",
+      price: "$7",
       period: "/month",
       description: "Access to more coaches",
       features: [
@@ -114,7 +114,7 @@ const Pricing = () => {
     {
       name: "Prime Subscriber",
       tier: "prime",
-      price: "$97",
+      price: "$27",
       period: "/month",
       description: "Full access to all features",
       features: [

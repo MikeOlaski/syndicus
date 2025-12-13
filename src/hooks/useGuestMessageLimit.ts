@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const GUEST_MESSAGE_LIMIT = 5;
+const GUEST_MESSAGE_LIMIT = 3;
 const GUEST_MESSAGES_KEY = (coachId: string) => `guest_messages_${coachId}`;
 
 interface GuestLimitState {

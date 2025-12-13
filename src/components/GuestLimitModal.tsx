@@ -27,7 +27,7 @@ export const GuestLimitModal = ({ open, onOpenChange, coachName }: GuestLimitMod
           </div>
           <DialogTitle className="text-xl">Free Messages Used</DialogTitle>
           <DialogDescription className="text-center pt-2">
-            You've used all 5 free guest messages{coachName ? ` with ${coachName}` : ""}. 
+            You've used all 3 free guest messages{coachName ? ` with ${coachName}` : ""}. 
             Create a free account to continue chatting and unlock more features!
           </DialogDescription>
         </DialogHeader>

@@ -16,6 +16,7 @@ import { SubscribeButton } from "@/components/SubscribeButton";
 import { MessageLimitBanner } from "@/components/MessageLimitBanner";
 import { GuestLimitModal } from "@/components/GuestLimitModal";
 import { GuestMessageBanner } from "@/components/GuestMessageBanner";
+import { SubscriptionLimitModal } from "@/components/SubscriptionLimitModal";
 
 const ChatActive = () => {
   const { coachSlug } = useParams();
@@ -39,6 +40,9 @@ const ChatActive = () => {
     guestLimit,
     showGuestLimitModal,
     setShowGuestLimitModal,
+    showSubscriptionLimitModal,
+    setShowSubscriptionLimitModal,
+    subscriptionStatus,
   } = useCoachChat(coachSlug);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -274,6 +278,13 @@ const ChatActive = () => {
         open={showGuestLimitModal}
         onOpenChange={setShowGuestLimitModal}
         coachName={coach.name}
+      />
+
+      {/* Subscription Limit Modal */}
+      <SubscriptionLimitModal
+        open={showSubscriptionLimitModal}
+        onOpenChange={setShowSubscriptionLimitModal}
+        tier={subscriptionStatus?.tier}
       />
     </div>
   );
