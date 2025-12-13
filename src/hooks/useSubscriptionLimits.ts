@@ -49,12 +49,12 @@ export const useSubscriptionLimits = () => {
 
       const tier = (profile?.subscriber_tier || "free") as "free" | "plus" | "prime";
 
-      // Get limits based on tier
+      // Get limits based on tier (matching database function)
       const limits: SubscriptionLimits = 
         tier === "prime" 
-          ? { max_coaches: 999, max_syndic8_groups: 10, max_coaches_per_group: 8, daily_messages: 999, modality: "all" }
+          ? { max_coaches: 17, max_syndic8_groups: 2, max_coaches_per_group: 8, daily_messages: 999, modality: "all" }
           : tier === "plus"
-          ? { max_coaches: 10, max_syndic8_groups: 3, max_coaches_per_group: 8, daily_messages: 50, modality: "text" }
+          ? { max_coaches: 5, max_syndic8_groups: 1, max_coaches_per_group: 8, daily_messages: 50, modality: "text" }
           : DEFAULT_LIMITS;
 
       // Count active subscriptions
