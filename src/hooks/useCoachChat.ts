@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useGuestMessageLimit } from "@/hooks/useGuestMessageLimit";
+import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 
 interface CoachData {
   id: string;
@@ -58,12 +59,16 @@ export const useCoachChat = (coachSlug: string | undefined) => {
   const [isCoachLoading, setIsCoachLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
+  const [showSubscriptionLimitModal, setShowSubscriptionLimitModal] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [coachId, setCoachId] = useState<string>(""); // The UUID
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Guest message limit tracking
   const guestLimit = useGuestMessageLimit(coachId || undefined);
+  
+  // Subscription limits for logged-in users
+  const { checkDailyMessageLimit, incrementMessageCount, status: subscriptionStatus } = useSubscriptionLimits();
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -235,6 +240,20 @@ export const useCoachChat = (coachSlug: string | undefined) => {
       return;
     }
 
+    // Check subscription limits for logged-in users
+    if (!guestLimit.isGuest && coachId) {
+      const { canSend, remaining } = await checkDailyMessageLimit(coachId);
+      if (!canSend) {
+        setShowSubscriptionLimitModal(true);
+        toast({
+          title: "Daily message limit reached",
+          description: "Upgrade your plan for more messages.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -249,6 +268,9 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     // Increment guest message count after sending
     if (guestLimit.isGuest) {
       guestLimit.incrementGuestMessage();
+    } else if (coachId) {
+      // Increment subscription message count for logged-in users
+      await incrementMessageCount(coachId);
     }
 
     try {
@@ -288,7 +310,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     } finally {
       setIsLoading(false);
     }
-  }, [message, isLoading, coach?.webhookUrl, sessionId, toast, guestLimit]);
+  }, [message, isLoading, coach?.webhookUrl, coachId, sessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount]);
 
   return {
     message,
@@ -308,6 +330,10 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     guestLimit,
     showGuestLimitModal,
     setShowGuestLimitModal,
+    // Subscription limit state
+    showSubscriptionLimitModal,
+    setShowSubscriptionLimitModal,
+    subscriptionStatus,
   };
 };
 
