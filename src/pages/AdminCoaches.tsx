@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users, ArrowUpDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -69,6 +69,7 @@ const AdminCoaches = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -100,9 +101,28 @@ const AdminCoaches = () => {
     if (statusFilter !== "all") {
       filtered = filtered.filter((coach) => coach.status === statusFilter);
     }
+
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case "subscribers_desc":
+          return b.subscriber_count - a.subscriber_count;
+        case "subscribers_asc":
+          return a.subscriber_count - b.subscriber_count;
+        case "rating_desc":
+          return b.rating - a.rating;
+        case "sessions_desc":
+          return b.total_sessions - a.total_sessions;
+        case "name_asc":
+          return (a.profiles.full_name || "").localeCompare(b.profiles.full_name || "");
+        case "newest":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
     
     setFilteredCoaches(filtered);
-  }, [searchQuery, statusFilter, coaches]);
+  }, [searchQuery, statusFilter, sortBy, coaches]);
 
   const fetchCoaches = async () => {
     try {
@@ -345,6 +365,22 @@ const AdminCoaches = () => {
                   <SelectItem value="knowledge_base_setup">Knowledge Base Setup</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 items-center">
+              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="subscribers_desc">Most Subscribers</SelectItem>
+                  <SelectItem value="subscribers_asc">Least Subscribers</SelectItem>
+                  <SelectItem value="rating_desc">Highest Rating</SelectItem>
+                  <SelectItem value="sessions_desc">Most Sessions</SelectItem>
+                  <SelectItem value="name_asc">Name A-Z</SelectItem>
                 </SelectContent>
               </Select>
             </div>
