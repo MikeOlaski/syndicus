@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Minimize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
+import { Minimize2, Loader2, Send, Plus, History, Trash2, UserPlus } from "lucide-react";
 import Header from "@/components/Header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -12,6 +12,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCoachChat } from "@/hooks/useCoachChat";
+import { SubscribeButton } from "@/components/SubscribeButton";
+import { MessageLimitBanner } from "@/components/MessageLimitBanner";
 
 const ChatActive = () => {
   const { coachSlug } = useParams();
@@ -137,6 +139,14 @@ const ChatActive = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Subscribe Button */}
+            <SubscribeButton 
+              coachId={coach.id}
+              coachName={coach.name}
+              size="sm"
+              showStatus={false}
+            />
+
             <div 
               className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate(`/${coachSlug}`)}
@@ -197,6 +207,12 @@ const ChatActive = () => {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Message Limit Banner */}
+      <MessageLimitBanner 
+        coachId={coach.id}
+        onUpgrade={() => navigate("/pricing")}
+      />
 
       {/* Chat Input - Fixed at Bottom */}
       <div className="border-t bg-background">
