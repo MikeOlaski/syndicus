@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Circle, Camera, Upload } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AIProfileAssistant } from "@/components/AIProfileAssistant";
 
 interface CoachProfile {
   bio: string | null;
@@ -39,6 +40,7 @@ const CoachProfileSetup = () => {
   });
   const [expertiseInput, setExpertiseInput] = useState("");
   const [currentTab, setCurrentTab] = useState("overview");
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -260,47 +262,71 @@ const CoachProfileSetup = () => {
     );
   }
 
+  const handleApplyAIContent = (type: "bio" | "specialization" | "expertise" | "personality", content: string | string[]) => {
+    if (type === "expertise" && Array.isArray(content)) {
+      setProfile(prev => ({
+        ...prev,
+        expertise: [...(prev.expertise || []), ...content.filter(t => !prev.expertise?.includes(t))]
+      }));
+    } else if (typeof content === "string") {
+      setProfile(prev => ({ ...prev, [type]: content }));
+    }
+  };
+
   return (
     <DashboardLayout requiredRole="coach">
       <div className="container mx-auto px-6 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Coach Profile & Onboarding</h1>
-          <p className="text-muted-foreground">
-            Complete your profile to set up your digital twin and start coaching.
-          </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Coach Profile & Onboarding</h1>
+            <p className="text-muted-foreground">
+              Complete your profile to set up your digital twin and start coaching.
+            </p>
+          </div>
+          <Button 
+            variant={showAIAssistant ? "default" : "outline"} 
+            onClick={() => setShowAIAssistant(!showAIAssistant)}
+            className="gap-2"
+          >
+            <Sparkles className="w-4 h-4" />
+            {showAIAssistant ? "Hide AI Assistant" : "AI Profile Assistant"}
+            {showAIAssistant ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+          </Button>
         </div>
 
-        {/* Onboarding Progress */}
-        <Card className="p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Onboarding Progress</h2>
-          <div className="flex items-center gap-2 flex-wrap">
-            {getOnboardingSteps().map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className="flex items-center gap-2">
-                  {step.completed ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-muted-foreground" />
-                  )}
-                  <span className={step.completed ? "text-foreground" : "text-muted-foreground"}>
-                    {step.label}
-                  </span>
-                </div>
-                {index < getOnboardingSteps().length - 1 && (
-                  <div className="w-8 h-0.5 bg-border mx-2" />
-                )}
+        <div className={`grid gap-6 ${showAIAssistant ? "lg:grid-cols-[1fr,400px]" : ""}`}>
+          <div className="space-y-6">
+            {/* Onboarding Progress */}
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Onboarding Progress</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                {getOnboardingSteps().map((step, index) => (
+                  <div key={step.id} className="flex items-center">
+                    <div className="flex items-center gap-2">
+                      {step.completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground" />
+                      )}
+                      <span className={step.completed ? "text-foreground" : "text-muted-foreground"}>
+                        {step.label}
+                      </span>
+                    </div>
+                    {index < getOnboardingSteps().length - 1 && (
+                      <div className="w-8 h-0.5 bg-border mx-2" />
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
+            </Card>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="expertise">Expertise</TabsTrigger>
-            <TabsTrigger value="personality">Personality & Style</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          </TabsList>
+            <Tabs value={currentTab} onValueChange={setCurrentTab}>
+              <TabsList className="mb-6">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="expertise">Expertise</TabsTrigger>
+                <TabsTrigger value="personality">Personality & Style</TabsTrigger>
+                <TabsTrigger value="pricing">Pricing</TabsTrigger>
+              </TabsList>
 
           <TabsContent value="overview">
             <Card className="p-6">
@@ -471,11 +497,23 @@ const CoachProfileSetup = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end gap-4 mt-6">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Save Profile
-          </Button>
+            <div className="flex justify-end gap-4 mt-6">
+              <Button onClick={handleSave} disabled={saving}>
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Profile
+              </Button>
+            </div>
+          </div>
+
+          {/* AI Assistant Panel */}
+          {showAIAssistant && (
+            <div className="lg:sticky lg:top-6 lg:self-start">
+              <AIProfileAssistant 
+                currentProfile={profile}
+                onApplyContent={handleApplyAIContent}
+              />
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
