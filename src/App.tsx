@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminCoaches from "./pages/AdminCoaches";
 import AdminSubscribers from "./pages/AdminSubscribers";
 import AdminWebhooks from "./pages/AdminWebhooks";
+import AdminTemplates from "./pages/AdminTemplates";
 import ChatPage from "./pages/ChatPage";
 import MyTwin from "./pages/MyTwin";
 import Conversations from "./pages/Conversations";
@@ -33,6 +34,7 @@ import NotFound from "./pages/NotFound";
 import Directory from "./pages/Directory";
 import CoachProfileSetup from "./pages/CoachProfileSetup";
 import CoachSubscribers from "./pages/CoachSubscribers";
+import CoachTemplates from "./pages/CoachTemplates";
 
 const queryClient = new QueryClient();
 
@@ -56,11 +58,13 @@ const App = () => (
           <Route path="/coach-dashboard/conversations" element={<Conversations />} />
           <Route path="/coach-dashboard/profile" element={<CoachProfileSetup />} />
           <Route path="/coach-dashboard/subscribers" element={<CoachSubscribers />} />
+          <Route path="/coach-dashboard/templates" element={<CoachTemplates />} />
           <Route path="/subscriber-dashboard" element={<SubscriberDashboard />} />
           <Route path="/subscriber-dashboard/chat" element={<ChatPage role="subscriber" />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/coaches" element={<AdminCoaches />} />
           <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
+          <Route path="/admin-dashboard/templates" element={<AdminTemplates />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
           <Route path="/admin-dashboard/chat" element={<ChatPage role="admin" />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
