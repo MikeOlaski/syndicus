@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -53,6 +53,7 @@ interface Coach {
   last_activity_at: string;
   webhook_url: string | null;
   show_on_homepage: boolean;
+  subscriber_count: number;
   profiles: {
     full_name: string | null;
     email: string;
@@ -131,12 +132,29 @@ const AdminCoaches = () => {
 
       if (profilesError) throw profilesError;
 
+      // Fetch subscriber counts for each coach
+      const { data: subscriptions, error: subsError } = await supabase
+        .from("subscriptions")
+        .select("coach_id")
+        .eq("status", "active")
+        .in("coach_id", userIds);
+
+      if (subsError) throw subsError;
+
+      // Count subscribers per coach
+      const subscriberCounts = new Map<string, number>();
+      (subscriptions || []).forEach((sub) => {
+        const count = subscriberCounts.get(sub.coach_id) || 0;
+        subscriberCounts.set(sub.coach_id, count + 1);
+      });
+
       // Create a map for quick lookup
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
       // Combine the data
       const combinedData = coachProfiles.map(cp => ({
         ...cp,
+        subscriber_count: subscriberCounts.get(cp.user_id) || 0,
         profiles: profilesMap.get(cp.user_id) || {
           full_name: null,
           email: "Unknown",
@@ -437,6 +455,7 @@ const AdminCoaches = () => {
                     <TableHead>Verified</TableHead>
                     <TableHead>Rating</TableHead>
                     <TableHead>Sessions</TableHead>
+                    <TableHead>Subscribers</TableHead>
                     <TableHead>Rate</TableHead>
                     <TableHead>Homepage</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -474,6 +493,12 @@ const AdminCoaches = () => {
                         </div>
                       </TableCell>
                       <TableCell>{coach.total_sessions}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-3 h-3 text-muted-foreground" />
+                          {coach.subscriber_count}
+                        </div>
+                      </TableCell>
                       <TableCell>${coach.hourly_rate || "N/A"}</TableCell>
                       <TableCell>
                         <Switch
@@ -546,6 +571,9 @@ const AdminCoaches = () => {
                           <span>{coach.rating.toFixed(1)}</span>
                           <span className="text-border">•</span>
                           <span>{coach.total_sessions} sessions</span>
+                          <span className="text-border">•</span>
+                          <Users className="w-3 h-3" />
+                          <span>{coach.subscriber_count} subs</span>
                         </div>
                         <div className="flex gap-1">
                           <Button asChild variant="ghost" size="sm" className="h-7 px-2" title="View public profile">
@@ -631,7 +659,7 @@ const AdminCoaches = () => {
                 )}
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b">
+                <div className="grid grid-cols-4 gap-3 mb-4 pb-4 border-b">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 mb-1">
                       <Star className="w-3 h-3 text-yellow-500" />
@@ -642,6 +670,13 @@ const AdminCoaches = () => {
                   <div className="text-center">
                     <p className="text-sm font-bold">{coach.total_sessions}</p>
                     <p className="text-xs text-muted-foreground">Sessions</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Users className="w-3 h-3 text-primary" />
+                      <p className="text-sm font-bold">{coach.subscriber_count}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Subscribers</p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold">
