@@ -29,6 +29,7 @@ import HowItWorks from "./pages/HowItWorks";
 import Pricing from "./pages/Pricing";
 import SuccessStories from "./pages/SuccessStories";
 import Help from "./pages/Help";
+import Support from "./pages/Support";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/success-stories" element={<SuccessStories />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/support" element={<Support />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/directory" element={<Directory />} />

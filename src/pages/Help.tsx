@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SupportChatBubble from "@/components/SupportChatBubble";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -80,6 +81,7 @@ const Help = () => {
       </main>
 
       <Footer />
+      <SupportChatBubble />
     </div>
   );
 };
