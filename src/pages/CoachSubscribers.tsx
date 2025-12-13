@@ -53,28 +53,36 @@ const CoachSubscribers = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch subscriptions with subscriber profiles
+      // Fetch subscriptions first
       const { data: subscriptionsData, error: subsError } = await supabase
         .from("subscriptions")
-        .select(`
-          id,
-          subscriber_id,
-          started_at,
-          expires_at,
-          status,
-          profiles!subscriptions_subscriber_id_fkey (
-            full_name,
-            email,
-            avatar_url
-          )
-        `)
+        .select("id, subscriber_id, started_at, expires_at, status")
         .eq("coach_id", user.id)
         .order("started_at", { ascending: false });
 
       if (subsError) throw subsError;
 
+      if (!subscriptionsData || subscriptionsData.length === 0) {
+        setSubscribers([]);
+        setStats({ total: 0, active: 0, totalConversations: 0, avgConversations: 0 });
+        return;
+      }
+
+      // Fetch profiles for all subscribers
+      const subscriberIds = subscriptionsData.map(s => s.subscriber_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, avatar_url")
+        .in("id", subscriberIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles by id
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.id, p])
+      );
+
       // Fetch conversation counts for each subscriber
-      const subscriberIds = subscriptionsData?.map(s => s.subscriber_id) || [];
       const conversationCounts = await Promise.all(
         subscriberIds.map(async (subscriberId) => {
           const { data: convData } = await supabase
@@ -93,7 +101,8 @@ const CoachSubscribers = () => {
       );
 
       // Combine data
-      const enrichedSubscribers: Subscriber[] = (subscriptionsData || []).map(sub => {
+      const enrichedSubscribers: Subscriber[] = subscriptionsData.map(sub => {
+        const profile = profilesMap.get(sub.subscriber_id);
         const convData = conversationCounts.find(c => c.subscriber_id === sub.subscriber_id);
         return {
           id: sub.id,
@@ -101,7 +110,7 @@ const CoachSubscribers = () => {
           started_at: sub.started_at,
           expires_at: sub.expires_at,
           status: sub.status,
-          profile: sub.profiles as any,
+          profile: profile || { full_name: null, email: "Unknown", avatar_url: null },
           conversations_count: convData?.count || 0,
           last_conversation: convData?.last_conversation || null
         };
