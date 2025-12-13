@@ -7,6 +7,8 @@ import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
 import { SubscribeButton } from "@/components/SubscribeButton";
 import { MessageLimitBanner } from "@/components/MessageLimitBanner";
+import { GuestLimitModal } from "@/components/GuestLimitModal";
+import { GuestMessageBanner } from "@/components/GuestMessageBanner";
 
 const CoachProfile = () => {
   const { coachSlug } = useParams();
@@ -21,6 +23,9 @@ const CoachProfile = () => {
     isCoachLoading,
     sendMessage,
     messagesEndRef,
+    guestLimit,
+    showGuestLimitModal,
+    setShowGuestLimitModal,
   } = useCoachChat(coachSlug);
 
   // Auto-scroll when messages change
@@ -253,11 +258,21 @@ const CoachProfile = () => {
               )}
             </div>
 
-            {/* Message Limit Banner */}
-            <MessageLimitBanner 
-              coachId={coach?.id || displayCoach.id}
-              onUpgrade={() => navigate("/pricing")}
-            />
+            {/* Guest Message Banner */}
+            {guestLimit.isGuest && (
+              <GuestMessageBanner 
+                messagesRemaining={guestLimit.messagesRemaining}
+                isGuest={guestLimit.isGuest}
+              />
+            )}
+
+            {/* Message Limit Banner (for logged-in free tier) */}
+            {!guestLimit.isGuest && (
+              <MessageLimitBanner 
+                coachId={coach?.id || displayCoach.id}
+                onUpgrade={() => navigate("/pricing")}
+              />
+            )}
 
             {/* Chat Input */}
             <div className="border-t p-4">
@@ -267,15 +282,15 @@ const CoachProfile = () => {
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder={`Ask ${displayCoach.name}'s AI assistant anything...`}
-                    disabled={isLoading}
-                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                    placeholder={guestLimit.isLimitReached ? "Sign up to continue chatting..." : `Ask ${displayCoach.name}'s AI assistant anything...`}
+                    disabled={isLoading || guestLimit.isLimitReached}
+                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background disabled:opacity-50"
                   />
                   <Button 
                     type="submit"
                     size="icon" 
                     className="bg-gradient-primary"
-                    disabled={!inputValue.trim() || isLoading}
+                    disabled={!inputValue.trim() || isLoading || guestLimit.isLimitReached}
                   >
                     {isLoading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -298,12 +313,22 @@ const CoachProfile = () => {
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                This is an AI simulation. For actual coaching, book a live session.
+                {guestLimit.isGuest 
+                  ? `${guestLimit.messagesRemaining} of ${guestLimit.limit} free messages remaining`
+                  : "This is an AI simulation. For actual coaching, book a live session."
+                }
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Guest Limit Modal */}
+      <GuestLimitModal 
+        open={showGuestLimitModal}
+        onOpenChange={setShowGuestLimitModal}
+        coachName={displayCoach.name}
+      />
     </div>
   );
 };
