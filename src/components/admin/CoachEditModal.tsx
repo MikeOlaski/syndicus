@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, X, MessageCircle, Save } from "lucide-react";
+import { Loader2, X, MessageCircle, Save, Camera, Upload } from "lucide-react";
 import { CoachChatModal } from "@/components/CoachChatModal";
 
 interface Coach {
@@ -42,7 +43,9 @@ interface CoachEditModalProps {
 export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [bio, setBio] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [specialization, setSpecialization] = useState("");
@@ -53,11 +56,13 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
   const [expertise, setExpertise] = useState<string[]>([]);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [chatModalOpen, setChatModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (coach) {
       setFullName(coach.profiles.full_name || "");
+      setAvatarUrl(coach.profiles.avatar_url);
       setBio(coach.bio || "");
       setHourlyRate(coach.hourly_rate?.toString() || "");
       setSpecialization(coach.specialization || "");
@@ -68,6 +73,82 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
       setWebhookUrl(coach.webhook_url || "");
     }
   }, [coach]);
+
+  const getInitials = (name: string | null) => {
+    if (!name) return "C";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !coach) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${coach.user_id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', coach.user_id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: "Success",
+        description: "Avatar updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload avatar",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleAddExpertise = () => {
     if (expertiseInput.trim() && !expertise.includes(expertiseInput.trim())) {
@@ -191,6 +272,56 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Avatar Upload Section */}
+          <div className="flex items-center gap-6 p-4 bg-muted/30 rounded-lg border">
+            <div className="relative">
+              <Avatar className="h-20 w-20 border-2 border-background shadow-md">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                  {getInitials(fullName || coach.profiles.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-base font-semibold">Profile Photo</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Click the camera icon to upload a new photo. Max 5MB.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2 gap-2"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+              >
+                <Upload className="h-4 w-4" />
+                Upload Photo
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
@@ -371,7 +502,7 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
       onOpenChange={setChatModalOpen}
       coachName={fullName || coach.profiles.full_name || "Coach"}
       coachBio={bio}
-      coachAvatar={coach.profiles.avatar_url}
+      coachAvatar={avatarUrl}
       webhookUrl={webhookUrl}
       coachId={coach.id}
     />

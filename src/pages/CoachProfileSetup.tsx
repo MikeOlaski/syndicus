@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Circle } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Camera, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -24,6 +25,10 @@ const CoachProfileSetup = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profile, setProfile] = useState<CoachProfile>({
     bio: "",
     specialization: "",
@@ -34,6 +39,7 @@ const CoachProfileSetup = () => {
   });
   const [expertiseInput, setExpertiseInput] = useState("");
   const [currentTab, setCurrentTab] = useState("overview");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -43,6 +49,20 @@ const CoachProfileSetup = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      setUserId(user.id);
+
+      // Fetch user profile for name and avatar
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      if (userProfile) {
+        setFullName(userProfile.full_name || "");
+        setAvatarUrl(userProfile.avatar_url);
+      }
 
       const { data, error } = await supabase
         .from("coach_profiles")
@@ -71,6 +91,82 @@ const CoachProfileSetup = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "C";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: "Success",
+        description: "Profile photo updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload photo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -211,6 +307,56 @@ const CoachProfileSetup = () => {
               <h2 className="text-xl font-semibold mb-4">Profile Overview</h2>
               
               <div className="space-y-6">
+                {/* Avatar Upload Section */}
+                <div className="flex items-center gap-6 p-4 bg-muted/30 rounded-lg border">
+                  <div className="relative">
+                    <Avatar className="h-20 w-20 border-2 border-background shadow-md">
+                      <AvatarImage src={avatarUrl || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                        {getInitials(fullName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-md"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                    >
+                      {isUploadingAvatar ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-base font-semibold">Profile Photo</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Click the camera icon to upload a new photo. Max 5MB.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-2"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                    >
+                      <Upload className="h-4 w-4" />
+                      Upload Photo
+                    </Button>
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="bio">Professional Bio</Label>
                   <Textarea
