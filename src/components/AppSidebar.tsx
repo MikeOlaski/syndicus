@@ -48,6 +48,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     { title: "Dashboard", url: "/subscriber-dashboard", icon: LayoutDashboard },
     { title: "My Coaches", url: "/subscriber-dashboard/coaches", icon: Users },
     { title: "AI Chat", url: "/subscriber-dashboard/chat", icon: MessageSquare },
+    { title: "Profile", url: "/subscriber-dashboard/profile", icon: User },
   ];
 
   const coachItems = [

@@ -37,6 +37,7 @@ import CoachProfileSetup from "./pages/CoachProfileSetup";
 import CoachSubscribers from "./pages/CoachSubscribers";
 import CoachTemplates from "./pages/CoachTemplates";
 import SubscriberCoaches from "./pages/SubscriberCoaches";
+import SubscriberProfile from "./pages/SubscriberProfile";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/subscriber-dashboard" element={<SubscriberDashboard />} />
           <Route path="/subscriber-dashboard/coaches" element={<SubscriberCoaches />} />
           <Route path="/subscriber-dashboard/chat" element={<ChatPage role="subscriber" />} />
+          <Route path="/subscriber-dashboard/profile" element={<SubscriberProfile />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/coaches" element={<AdminCoaches />} />
           <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
