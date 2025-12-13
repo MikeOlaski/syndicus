@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3 } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Table as TableComponent,
@@ -37,6 +38,7 @@ import {
 interface Coach {
   id: string;
   user_id: string;
+  slug: string;
   bio: string | null;
   hourly_rate: number | null;
   is_verified: boolean;
@@ -482,6 +484,11 @@ const AdminCoaches = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          <Button asChild variant="ghost" size="sm" title="View public profile">
+                            <Link to={`/${coach.slug}`} target="_blank">
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
+                          </Button>
                           <Button onClick={() => handleEditCoach(coach)} variant="ghost" size="sm">
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -541,6 +548,11 @@ const AdminCoaches = () => {
                           <span>{coach.total_sessions} sessions</span>
                         </div>
                         <div className="flex gap-1">
+                          <Button asChild variant="ghost" size="sm" className="h-7 px-2" title="View public profile">
+                            <Link to={`/${coach.slug}`} target="_blank">
+                              <ExternalLink className="w-3 h-3" />
+                            </Link>
+                          </Button>
                           <Button onClick={() => handleEditCoach(coach)} variant="outline" size="sm" className="flex-1 h-7 text-xs">
                             Edit
                           </Button>
@@ -681,6 +693,11 @@ const AdminCoaches = () => {
 
                 {/* Actions */}
                 <div className="flex gap-2">
+                  <Button asChild variant="ghost" size="sm" title="View public profile">
+                    <Link to={`/${coach.slug}`} target="_blank">
+                      <ExternalLink className="w-4 h-4" />
+                    </Link>
+                  </Button>
                   <Button
                     onClick={() => handleEditCoach(coach)}
                     variant="outline"
