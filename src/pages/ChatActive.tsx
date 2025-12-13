@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Minimize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
+import { Minimize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
+import Header from "@/components/Header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -66,20 +67,12 @@ const ChatActive = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-gradient-primary flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">Syndic.us</h1>
-              <p className="text-xs text-muted-foreground">Syndicated Digital Twin PersonaBots</p>
-            </div>
-          </a>
+      <Header />
+      
+      {/* Chat Controls Bar */}
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {/* New Chat Button */}
             <Button 
               variant="outline" 
               size="sm"
@@ -90,7 +83,6 @@ const ChatActive = () => {
               New Chat
             </Button>
 
-            {/* Chat History Button */}
             <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
@@ -142,9 +134,11 @@ const ChatActive = () => {
                 </ScrollArea>
               </SheetContent>
             </Sheet>
+          </div>
 
+          <div className="flex items-center gap-3">
             <div 
-              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity ml-2"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => navigate(`/${coachSlug}`)}
             >
               <img src={coach.image} alt={coach.name} className="w-8 h-8 rounded-full" />
@@ -153,7 +147,7 @@ const ChatActive = () => {
                 <div className="text-xs text-primary">{coach.specialization}</div>
               </div>
             </div>
-            <span className="flex items-center gap-1 ml-4">
+            <span className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs text-green-600 font-medium">Online</span>
             </span>
@@ -165,10 +159,9 @@ const ChatActive = () => {
             >
               <Minimize2 className="w-4 h-4" />
             </Button>
-            <Button className="ml-2 bg-gradient-primary">Book Live Session</Button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Chat Messages Area */}
       <div className="flex-1 container mx-auto max-w-4xl px-4 py-6 overflow-y-auto">
