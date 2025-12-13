@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Minimize2, Loader2, Send, Plus, History, Trash2, UserPlus } from "lucide-react";
+import { Minimize2, Loader2, Send, Plus, History, Trash2 } from "lucide-react";
 import Header from "@/components/Header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -14,6 +14,8 @@ import {
 import { useCoachChat } from "@/hooks/useCoachChat";
 import { SubscribeButton } from "@/components/SubscribeButton";
 import { MessageLimitBanner } from "@/components/MessageLimitBanner";
+import { GuestLimitModal } from "@/components/GuestLimitModal";
+import { GuestMessageBanner } from "@/components/GuestMessageBanner";
 
 const ChatActive = () => {
   const { coachSlug } = useParams();
@@ -34,6 +36,9 @@ const ChatActive = () => {
     loadSession,
     deleteSession,
     sendMessage,
+    guestLimit,
+    showGuestLimitModal,
+    setShowGuestLimitModal,
   } = useCoachChat(coachSlug);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -208,11 +213,21 @@ const ChatActive = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Limit Banner */}
-      <MessageLimitBanner 
-        coachId={coach.id}
-        onUpgrade={() => navigate("/pricing")}
-      />
+      {/* Guest Message Banner */}
+      {guestLimit.isGuest && (
+        <GuestMessageBanner 
+          messagesRemaining={guestLimit.messagesRemaining}
+          isGuest={guestLimit.isGuest}
+        />
+      )}
+
+      {/* Message Limit Banner (for logged-in free tier) */}
+      {!guestLimit.isGuest && (
+        <MessageLimitBanner 
+          coachId={coach.id}
+          onUpgrade={() => navigate("/pricing")}
+        />
+      )}
 
       {/* Chat Input - Fixed at Bottom */}
       <div className="border-t bg-background">
@@ -223,15 +238,15 @@ const ChatActive = () => {
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder={`Message ${coach.name}...`}
-                disabled={isLoading}
-                className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                placeholder={guestLimit.isLimitReached ? "Sign up to continue chatting..." : `Message ${coach.name}...`}
+                disabled={isLoading || guestLimit.isLimitReached}
+                className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background disabled:opacity-50"
               />
               <Button 
                 type="submit" 
                 size="icon" 
                 className="h-12 w-12 bg-gradient-primary"
-                disabled={!message.trim() || isLoading}
+                disabled={!message.trim() || isLoading || guestLimit.isLimitReached}
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -246,10 +261,20 @@ const ChatActive = () => {
             </div>
           )}
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            This is an AI simulation of {coach.name}'s coaching style. For live sessions, book a consultation.
+            {guestLimit.isGuest 
+              ? `${guestLimit.messagesRemaining} of ${guestLimit.limit} free messages remaining • Sign up for more`
+              : `This is an AI simulation of ${coach.name}'s coaching style. For live sessions, book a consultation.`
+            }
           </p>
         </div>
       </div>
+
+      {/* Guest Limit Modal */}
+      <GuestLimitModal 
+        open={showGuestLimitModal}
+        onOpenChange={setShowGuestLimitModal}
+        coachName={coach.name}
+      />
     </div>
   );
 };

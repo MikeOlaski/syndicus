@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useGuestMessageLimit } from "@/hooks/useGuestMessageLimit";
 
 interface CoachData {
   id: string;
@@ -56,9 +57,13 @@ export const useCoachChat = (coachSlug: string | undefined) => {
   const [coach, setCoach] = useState<CoachData | null>(null);
   const [isCoachLoading, setIsCoachLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
+  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [coachId, setCoachId] = useState<string>(""); // The UUID
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Guest message limit tracking
+  const guestLimit = useGuestMessageLimit(coachId || undefined);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -224,6 +229,12 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     const textToSend = messageText || message;
     if (!textToSend.trim() || isLoading || !coach?.webhookUrl) return;
 
+    // Check guest message limit before sending
+    if (guestLimit.isGuest && !guestLimit.canSendMessage()) {
+      setShowGuestLimitModal(true);
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -234,6 +245,11 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     setMessages(prev => [...prev, userMessage]);
     setMessage("");
     setIsLoading(true);
+
+    // Increment guest message count after sending
+    if (guestLimit.isGuest) {
+      guestLimit.incrementGuestMessage();
+    }
 
     try {
       const response = await fetch(coach.webhookUrl, {
@@ -272,7 +288,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     } finally {
       setIsLoading(false);
     }
-  }, [message, isLoading, coach?.webhookUrl, sessionId, toast]);
+  }, [message, isLoading, coach?.webhookUrl, sessionId, toast, guestLimit]);
 
   return {
     message,
@@ -288,6 +304,10 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     loadSession,
     deleteSession,
     sendMessage,
+    // Guest limit state
+    guestLimit,
+    showGuestLimitModal,
+    setShowGuestLimitModal,
   };
 };
 
