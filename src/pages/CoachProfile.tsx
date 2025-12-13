@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2 } from "lucide-react";
+import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
@@ -10,11 +10,13 @@ import { MessageLimitBanner } from "@/components/MessageLimitBanner";
 import { GuestLimitModal } from "@/components/GuestLimitModal";
 import { GuestMessageBanner } from "@/components/GuestMessageBanner";
 import { SubscriptionLimitModal } from "@/components/SubscriptionLimitModal";
+import { ClaimCoachModal } from "@/components/ClaimCoachModal";
 
 const CoachProfile = () => {
   const { coachSlug } = useParams();
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
+  const [showClaimModal, setShowClaimModal] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   
   const {
@@ -141,6 +143,18 @@ const CoachProfile = () => {
               </div>
 
               <div className="pt-4 border-t space-y-3">
+                {/* Claim Coach Button - only show for unclaimed coaches */}
+                {coach && !coach.isClaimed && (
+                  <Button 
+                    variant="outline"
+                    className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                    onClick={() => setShowClaimModal(true)}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Claim This Profile
+                  </Button>
+                )}
+
                 {/* Subscribe Button */}
                 <SubscribeButton 
                   coachId={coach?.id || displayCoach.id}
@@ -339,6 +353,15 @@ const CoachProfile = () => {
         open={showSubscriptionLimitModal}
         onOpenChange={setShowSubscriptionLimitModal}
         tier={subscriptionStatus?.tier}
+      />
+
+      {/* Claim Coach Modal */}
+      <ClaimCoachModal
+        open={showClaimModal}
+        onOpenChange={setShowClaimModal}
+        coachId={coach?.id || displayCoach.id}
+        coachName={displayCoach.name}
+        coachSlug={coachSlug || ""}
       />
     </div>
   );
