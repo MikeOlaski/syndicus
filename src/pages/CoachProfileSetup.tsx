@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIProfileAssistant } from "@/components/AIProfileAssistant";
@@ -41,6 +41,7 @@ const CoachProfileSetup = () => {
   const [expertiseInput, setExpertiseInput] = useState("");
   const [currentTab, setCurrentTab] = useState("overview");
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [generatingField, setGeneratingField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -273,6 +274,101 @@ const CoachProfileSetup = () => {
     }
   };
 
+  const generateField = async (fieldType: "bio" | "specialization" | "expertise" | "personality") => {
+    setGeneratingField(fieldType);
+    
+    const prompts = {
+      bio: "Generate a professional bio for my coaching profile based on my current profile information.",
+      specialization: "Suggest a primary specialization for my coaching profile based on my expertise and background.",
+      expertise: "Generate relevant expertise tags for my coaching profile.",
+      personality: "Generate a personality and coaching style description for my digital twin."
+    };
+
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-coach-profile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompts[fieldType] }],
+          currentProfile: profile,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to generate content");
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) fullContent += content;
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+
+      // Parse the generated content
+      const patterns: Record<string, RegExp> = {
+        bio: /\[GENERATED_BIO\]([\s\S]*?)\[\/GENERATED_BIO\]/,
+        specialization: /\[GENERATED_SPECIALIZATION\]([\s\S]*?)\[\/GENERATED_SPECIALIZATION\]/,
+        expertise: /\[GENERATED_EXPERTISE\]([\s\S]*?)\[\/GENERATED_EXPERTISE\]/,
+        personality: /\[GENERATED_PERSONALITY\]([\s\S]*?)\[\/GENERATED_PERSONALITY\]/,
+      };
+
+      const match = patterns[fieldType].exec(fullContent);
+      if (match) {
+        const content = match[1].trim();
+        if (fieldType === "expertise") {
+          const tags = content.split(",").map(t => t.trim()).filter(Boolean);
+          setProfile(prev => ({
+            ...prev,
+            expertise: [...(prev.expertise || []), ...tags.filter(t => !prev.expertise?.includes(t))]
+          }));
+        } else {
+          setProfile(prev => ({ ...prev, [fieldType]: content }));
+        }
+        toast({ title: "Generated!", description: `${fieldType.charAt(0).toUpperCase() + fieldType.slice(1)} has been updated.` });
+      } else {
+        toast({ title: "No content generated", description: "Try opening the AI assistant for more guidance.", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Error generating field:", error);
+      toast({ title: "Error", description: "Failed to generate content", variant: "destructive" });
+    } finally {
+      setGeneratingField(null);
+    }
+  };
+
   return (
     <DashboardLayout requiredRole="coach">
       <div className="container mx-auto px-6 py-8 max-w-7xl">
@@ -392,9 +488,21 @@ const CoachProfileSetup = () => {
                     onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                     className="min-h-[150px] mt-2"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This will be displayed on your public profile.
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      This will be displayed on your public profile.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => generateField("bio")}
+                      disabled={generatingField !== null}
+                      className="gap-2"
+                    >
+                      {generatingField === "bio" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                      Generate
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
@@ -406,6 +514,18 @@ const CoachProfileSetup = () => {
                     onChange={(e) => setProfile({ ...profile, specialization: e.target.value })}
                     className="mt-2"
                   />
+                  <div className="flex justify-end mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => generateField("specialization")}
+                      disabled={generatingField !== null}
+                      className="gap-2"
+                    >
+                      {generatingField === "specialization" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                      Generate
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -426,6 +546,18 @@ const CoachProfileSetup = () => {
                       onKeyPress={(e) => e.key === "Enter" && addExpertise()}
                     />
                     <Button onClick={addExpertise} variant="secondary">Add</Button>
+                  </div>
+                  <div className="flex justify-end mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => generateField("expertise")}
+                      disabled={generatingField !== null}
+                      className="gap-2"
+                    >
+                      {generatingField === "expertise" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                      Generate Tags
+                    </Button>
                   </div>
                 </div>
 
@@ -465,9 +597,21 @@ const CoachProfileSetup = () => {
                     onChange={(e) => setProfile({ ...profile, personality: e.target.value })}
                     className="min-h-[200px] mt-2"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    These instructions will guide how your AI digital twin interacts with subscribers.
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      These instructions will guide how your AI digital twin interacts with subscribers.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => generateField("personality")}
+                      disabled={generatingField !== null}
+                      className="gap-2"
+                    >
+                      {generatingField === "personality" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                      Generate
+                    </Button>
+                  </div>
                 </div>
               </div>
             </Card>
