@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2 } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2, Mail, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIProfileAssistant } from "@/components/AIProfileAssistant";
@@ -29,7 +29,10 @@ const CoachProfileSetup = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [createdAt, setCreatedAt] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [savingBasicInfo, setSavingBasicInfo] = useState(false);
   const [profile, setProfile] = useState<CoachProfile>({
     bio: "",
     specialization: "",
@@ -55,15 +58,17 @@ const CoachProfileSetup = () => {
 
       setUserId(user.id);
 
-      // Fetch user profile for name and avatar
+      // Fetch user profile for name, email, and avatar
       const { data: userProfile } = await supabase
         .from("profiles")
-        .select("full_name, avatar_url")
+        .select("full_name, email, avatar_url, created_at")
         .eq("id", user.id)
         .single();
 
       if (userProfile) {
         setFullName(userProfile.full_name || "");
+        setEmail(userProfile.email || "");
+        setCreatedAt(userProfile.created_at || "");
         setAvatarUrl(userProfile.avatar_url);
       }
 
@@ -179,6 +184,35 @@ const CoachProfileSetup = () => {
       });
     } finally {
       setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleSaveBasicInfo = async () => {
+    setSavingBasicInfo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: fullName })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Basic info saved successfully"
+      });
+    } catch (error) {
+      console.error("Error saving basic info:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save basic info",
+        variant: "destructive"
+      });
+    } finally {
+      setSavingBasicInfo(false);
     }
   };
 
@@ -488,7 +522,62 @@ const CoachProfileSetup = () => {
                   </div>
                 </div>
 
-                <div>
+                {/* Basic Account Info */}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        value={email}
+                        disabled
+                        className="pl-10 bg-muted"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Email cannot be changed. Contact support if needed.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>Member since: {createdAt ? new Date(createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }) : "Unknown"}</span>
+                  </div>
+                  <Button 
+                    onClick={handleSaveBasicInfo} 
+                    disabled={savingBasicInfo}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {savingBasicInfo ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Name"
+                    )}
+                  </Button>
+                </div>
+
+                <div className="border-t pt-6">
+                  <Label htmlFor="bio">Professional Bio</Label>
                   <Label htmlFor="bio">Professional Bio</Label>
                   <Textarea
                     id="bio"
