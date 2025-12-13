@@ -160,6 +160,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_message_usage: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          message_count: number
+          message_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          message_count?: number
+          message_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          message_count?: number
+          message_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       knowledge_base: {
         Row: {
           coach_id: string
@@ -200,6 +230,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          subscriber_tier: Database["public"]["Enums"]["subscriber_tier"] | null
           updated_at: string
         }
         Insert: {
@@ -208,6 +239,9 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          subscriber_tier?:
+            | Database["public"]["Enums"]["subscriber_tier"]
+            | null
           updated_at?: string
         }
         Update: {
@@ -216,6 +250,9 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          subscriber_tier?:
+            | Database["public"]["Enums"]["subscriber_tier"]
+            | null
           updated_at?: string
         }
         Relationships: []
@@ -303,6 +340,62 @@ export type Database = {
           },
         ]
       }
+      syndic8_group_members: {
+        Row: {
+          added_at: string
+          coach_id: string
+          group_id: string
+          id: string
+        }
+        Insert: {
+          added_at?: string
+          coach_id: string
+          group_id: string
+          id?: string
+        }
+        Update: {
+          added_at?: string
+          coach_id?: string
+          group_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syndic8_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "syndic8_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      syndic8_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -388,6 +481,10 @@ export type Database = {
       }
     }
     Functions: {
+      get_subscription_limits: {
+        Args: { user_tier: Database["public"]["Enums"]["subscriber_tier"] }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -406,6 +503,7 @@ export type Database = {
         | "knowledge_base_setup"
         | "active"
         | "inactive"
+      subscriber_tier: "free" | "plus" | "prime"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -543,6 +641,7 @@ export const Constants = {
         "active",
         "inactive",
       ],
+      subscriber_tier: ["free", "plus", "prime"],
     },
   },
 } as const
