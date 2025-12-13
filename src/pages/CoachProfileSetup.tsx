@@ -71,9 +71,12 @@ const CoachProfileSetup = () => {
         .from("coach_profiles")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching coach profile:", error);
+        throw error;
+      }
 
       if (data) {
         setProfile({
@@ -84,14 +87,20 @@ const CoachProfileSetup = () => {
           hourly_rate: data.hourly_rate || null,
           status: data.status || "admin_setup"
         });
+      } else {
+        // No coach profile found - user might not have coach setup yet
+        console.log("No coach profile found for user");
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile data",
-        variant: "destructive"
-      });
+      // Only show error if it's not a "no rows" error
+      if ((error as any)?.code !== 'PGRST116') {
+        toast({
+          title: "Error",
+          description: "Failed to load profile data",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
