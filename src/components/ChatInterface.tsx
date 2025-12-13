@@ -13,21 +13,52 @@ interface Message {
 interface ChatInterfaceProps {
   systemPrompt?: string;
   placeholder?: string;
+  initialPrompt?: string;
 }
 
 export const ChatInterface = ({ 
   systemPrompt = "You are a helpful AI assistant.",
-  placeholder = "Type your message here..."
+  placeholder = "Type your message here...",
+  initialPrompt
 }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasProcessedInitial, setHasProcessedInitial] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Check for pending template prompt from sessionStorage
+  useEffect(() => {
+    if (hasProcessedInitial) return;
+    
+    const pendingPrompt = sessionStorage.getItem("pending_template_prompt");
+    const pendingName = sessionStorage.getItem("pending_template_name");
+    
+    if (pendingPrompt) {
+      sessionStorage.removeItem("pending_template_prompt");
+      sessionStorage.removeItem("pending_template_name");
+      setHasProcessedInitial(true);
+      
+      // Show toast about template being used
+      if (pendingName) {
+        toast({
+          title: "Template Loaded",
+          description: `Using "${pendingName}" template`,
+        });
+      }
+      
+      // Set the input and auto-send
+      setInput(pendingPrompt);
+    } else if (initialPrompt) {
+      setInput(initialPrompt);
+      setHasProcessedInitial(true);
+    }
+  }, [hasProcessedInitial, initialPrompt, toast]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
