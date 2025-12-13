@@ -5,6 +5,8 @@ import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loa
 import Header from "@/components/Header";
 import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
+import { SubscribeButton } from "@/components/SubscribeButton";
+import { MessageLimitBanner } from "@/components/MessageLimitBanner";
 
 const CoachProfile = () => {
   const { coachSlug } = useParams();
@@ -129,12 +131,20 @@ const CoachProfile = () => {
                 </ul>
               </div>
 
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between mb-4">
+              <div className="pt-4 border-t space-y-3">
+                {/* Subscribe Button */}
+                <SubscribeButton 
+                  coachId={coach?.id || displayCoach.id}
+                  coachName={displayCoach.name}
+                  className="w-full"
+                  showStatus={true}
+                />
+
+                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Live Sessions</span>
                   <span className="text-lg font-bold text-primary">${profileData.hourlyRate}/hour</span>
                 </div>
-                <Button className="w-full mb-3 bg-gradient-primary">
+                <Button className="w-full bg-gradient-primary">
                   <Calendar className="w-4 h-4 mr-2" />
                   Schedule Session
                 </Button>
@@ -149,7 +159,7 @@ const CoachProfile = () => {
                   </Button>
                 </div>
                 <Button 
-                  className="w-full mt-3 bg-gradient-primary"
+                  className="w-full bg-gradient-primary"
                   onClick={() => navigate(`/${coachSlug}/chat`)}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
@@ -242,6 +252,12 @@ const CoachProfile = () => {
                 </>
               )}
             </div>
+
+            {/* Message Limit Banner */}
+            <MessageLimitBanner 
+              coachId={coach?.id || displayCoach.id}
+              onUpgrade={() => navigate("/pricing")}
+            />
 
             {/* Chat Input */}
             <div className="border-t p-4">
