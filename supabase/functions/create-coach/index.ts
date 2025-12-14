@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (requestData.hourlyRate !== undefined && (typeof requestData.hourlyRate !== "number" || requestData.hourlyRate < 0 || requestData.hourlyRate > 10000)) {
+    if (requestData.hourlyRate !== undefined && requestData.hourlyRate !== null && (typeof requestData.hourlyRate !== "number" || requestData.hourlyRate < 0 || requestData.hourlyRate > 10000)) {
       return new Response(
         JSON.stringify({ error: "Hourly rate must be between 0 and 10000" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
