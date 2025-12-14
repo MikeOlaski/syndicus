@@ -23,6 +23,40 @@ function generateBotEmail(botName: string): string {
   return `${sanitizedName}-bot-${randomSuffix}@persona.ai`;
 }
 
+// Diacritics map for transliteration
+const DIACRITICS_MAP: { [key: string]: string } = {
+  'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a', 'ã': 'a', 'å': 'a', 'ā': 'a',
+  'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e', 'ē': 'e',
+  'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i', 'ī': 'i',
+  'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o', 'õ': 'o', 'ø': 'o', 'ō': 'o',
+  'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u', 'ū': 'u',
+  'ý': 'y', 'ÿ': 'y',
+  'ñ': 'n', 'ń': 'n',
+  'ç': 'c', 'ć': 'c',
+  'ß': 'ss',
+  'æ': 'ae', 'œ': 'oe',
+};
+
+// Transliterate string
+function transliterate(str: string): string {
+  return str.split('').map(char => DIACRITICS_MAP[char.toLowerCase()] || char).join('');
+}
+
+// Generate a URL-friendly slug from a name
+function generateSlug(name: string): string {
+  const transliterated = transliterate(name);
+  let slug = transliterated
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  
+  // Add random suffix to ensure uniqueness
+  const randomSuffix = Math.random().toString(36).substring(2, 6);
+  return `${slug}-${randomSuffix}`;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -217,11 +251,15 @@ serve(async (req) => {
             console.error("Error inserting coach role:", roleInsertError);
           }
 
-          // Step 4: Create the coach profile
+          // Step 4: Create the coach profile with slug
+          const slug = generateSlug(bot_name);
+          console.log(`Generated slug for coach: ${slug}`);
+          
           const { error: coachProfileError } = await supabase
             .from("coach_profiles")
             .insert({
               user_id: newUserId,
+              slug: slug,
               bio: `AI Persona Bot - ${bot_name}`,
               specialization: "AI Assistant",
               status: "admin_setup",
