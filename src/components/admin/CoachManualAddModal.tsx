@@ -214,7 +214,14 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
         body: formData,
       });
 
-      if (error) throw error;
+      // Check for error in response data (edge function returns error in body)
+      if (error) {
+        throw new Error(error.message || 'Failed to create coach');
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       const coachProfileId = data?.coachProfileId;
       setCreatedCoachId(coachProfileId || null);
