@@ -154,17 +154,17 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
     
     const formData = {
       fullName: fullName.trim(),
-      email: email.trim() || undefined,
-      phoneNumber: phoneNumber.trim() || undefined,
-      location: location.trim() || undefined,
-      bio: bio || undefined,
-      specialization: specialization || undefined,
-      personality: personality || undefined,
-      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-      expertise: expertise.length > 0 ? expertise : undefined,
+      email: email.trim() || null,
+      phoneNumber: phoneNumber.trim() || null,
+      location: location.trim() || null,
+      bio: bio.trim() || null,
+      specialization: specialization.trim() || null,
+      personality: personality.trim() || null,
+      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+      expertise: expertise.length > 0 ? expertise : null,
       status: status,
       isVerified: isVerified,
-      webhookUrl: webhookUrl || undefined,
+      webhookUrl: webhookUrl.trim() || null,
     };
 
     try {
