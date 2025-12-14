@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { X, Send, Sparkles } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { FormattedMessage } from "@/components/ui/formatted-message";
 
 interface Message {
   role: "user" | "assistant";
@@ -178,7 +179,11 @@ const ExpertAdvisorChat = ({ initialQuery, onClose }: ExpertAdvisorChatProps) =>
                   : "bg-muted"
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              {message.role === "user" ? (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              ) : (
+                <FormattedMessage content={message.content} className="text-sm" />
+              )}
             </div>
           </div>
         ))}
