@@ -214,11 +214,16 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
         body: formData,
       });
 
-      // Check for error in response data (edge function returns error in body)
+      console.log("Create coach response:", { data, error });
+
+      // Check for error - supabase.functions.invoke returns error for non-2xx responses
       if (error) {
-        throw new Error(error.message || 'Failed to create coach');
+        // The error.context might contain the response body with the error message
+        const errorMessage = error.context?.body?.error || error.message || 'Failed to create coach';
+        throw new Error(errorMessage);
       }
       
+      // Also check if error is in the data response
       if (data?.error) {
         throw new Error(data.error);
       }
