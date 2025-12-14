@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, X, MessageCircle, Save } from "lucide-react";
+import { Loader2, X, MessageCircle } from "lucide-react";
 import { CoachChatModal } from "@/components/CoachChatModal";
 
 interface CoachManualAddModalProps {
@@ -21,6 +21,8 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
   const [isLoading, setIsLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [specialization, setSpecialization] = useState("");
@@ -32,11 +34,32 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
   const [webhookUrl, setWebhookUrl] = useState("");
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [createdCoachId, setCreatedCoachId] = useState<string | null>(null);
+  const [addCoachWebhookUrl, setAddCoachWebhookUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch the "Add Coach by Human" webhook URL on mount
+  useEffect(() => {
+    const fetchWebhook = async () => {
+      const { data, error } = await supabase
+        .from('webhook_endpoints')
+        .select('url')
+        .eq('name', 'add_coach_by_human')
+        .single();
+      
+      if (data?.url) {
+        setAddCoachWebhookUrl(data.url);
+      }
+    };
+    if (open) {
+      fetchWebhook();
+    }
+  }, [open]);
 
   const resetForm = () => {
     setFullName("");
     setEmail("");
+    setPhoneNumber("");
+    setLocation("");
     setBio("");
     setHourlyRate("");
     setSpecialization("");
@@ -81,10 +104,21 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
   };
 
   const handleSave = async () => {
+    // Validate full name
     if (!fullName.trim()) {
       toast({
         title: "Error",
         description: "Full name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate email OR phone required
+    if (!email.trim() && !phoneNumber.trim()) {
+      toast({
+        title: "Error",
+        description: "Either email or phone number is required",
         variant: "destructive",
       });
       return;
@@ -102,23 +136,82 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
         return;
       }
     }
+
+    // Basic phone validation if provided
+    if (phoneNumber.trim()) {
+      const phoneRegex = /^[\d\s\-\+\(\)]{7,20}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        toast({
+          title: "Error",
+          description: "Please enter a valid phone number",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
     setIsLoading(true);
+    
+    const formData = {
+      fullName: fullName.trim(),
+      email: email.trim() || undefined,
+      phoneNumber: phoneNumber.trim() || undefined,
+      location: location.trim() || undefined,
+      bio: bio || undefined,
+      specialization: specialization || undefined,
+      personality: personality || undefined,
+      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+      expertise: expertise.length > 0 ? expertise : undefined,
+      status: status,
+      isVerified: isVerified,
+      webhookUrl: webhookUrl || undefined,
+    };
+
     try {
-      // Call the create-coach edge function with all fields
+      // First, call the "Add Coach by Human" webhook if configured
+      if (addCoachWebhookUrl) {
+        try {
+          const webhookResponse = await fetch(addCoachWebhookUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            mode: "cors",
+            body: JSON.stringify({
+              ...formData,
+              timestamp: new Date().toISOString(),
+              triggered_from: window.location.origin,
+            }),
+          });
+
+          // Check if webhook returned an error
+          if (!webhookResponse.ok) {
+            const errorText = await webhookResponse.text();
+            throw new Error(`Webhook failed: ${errorText || webhookResponse.statusText}`);
+          }
+
+          // Try to parse the response
+          const webhookResult = await webhookResponse.json().catch(() => ({}));
+          
+          // Check for explicit failure in response
+          if (webhookResult.success === false || webhookResult.error) {
+            throw new Error(webhookResult.error || webhookResult.message || "Webhook returned an error");
+          }
+        } catch (webhookError: any) {
+          console.error("Webhook error:", webhookError);
+          toast({
+            title: "Webhook Error",
+            description: webhookError.message || "Failed to process with external webhook. Coach was not created.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // If webhook succeeded (or no webhook configured), create the coach
       const { data, error } = await supabase.functions.invoke('create-coach', {
-        body: {
-          email: email.trim() || undefined,
-          fullName: fullName.trim(),
-          bio: bio || undefined,
-          specialization: specialization || undefined,
-          personality: personality || undefined,
-          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-          expertise: expertise.length > 0 ? expertise : undefined,
-          status: status,
-          isVerified: isVerified,
-          webhookUrl: webhookUrl || undefined,
-        },
+        body: formData,
       });
 
       if (error) throw error;
@@ -180,16 +273,41 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email (Optional)</Label>
+                <Label htmlFor="email">Email {!phoneNumber.trim() ? "*" : "(Optional)"}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Auto-generated if empty"
+                  placeholder="coach@example.com"
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number {!email.trim() ? "*" : "(Optional)"}</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="City, Country"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">* Email or Phone Number is required</p>
 
             <div className="space-y-2">
               <Label htmlFor="status">Account Status</Label>
