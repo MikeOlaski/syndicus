@@ -273,7 +273,7 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email {!phoneNumber.trim() ? "*" : "(Optional)"}</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -286,7 +286,7 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number {!email.trim() ? "*" : "(Optional)"}</Label>
+                <Label htmlFor="phoneNumber">Phone Number</Label>
                 <Input
                   id="phoneNumber"
                   type="tel"
