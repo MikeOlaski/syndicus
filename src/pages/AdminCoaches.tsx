@@ -501,14 +501,17 @@ const AdminCoaches = () => {
                   {filteredCoaches.map((coach) => (
                     <TableRow key={coach.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleEditCoach(coach)}
+                        >
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={coach.profiles.avatar_url || undefined} />
                             <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials(coach.profiles.full_name)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{coach.profiles.full_name || "Unnamed"}</span>
+                          <span className="font-medium hover:underline">{coach.profiles.full_name || "Unnamed"}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{coach.profiles.email}</TableCell>
@@ -590,7 +593,10 @@ const AdminCoaches = () => {
                   <div className="space-y-3">
                     {statusCoaches.map((coach) => (
                       <Card key={coach.id} className="p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-3">
+                        <div 
+                          className="flex items-center gap-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleEditCoach(coach)}
+                        >
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={coach.profiles.avatar_url || undefined} />
                             <AvatarFallback className="bg-primary/10 text-primary text-sm">
@@ -598,7 +604,7 @@ const AdminCoaches = () => {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-sm">{coach.profiles.full_name || "Unnamed"}</p>
+                            <p className="font-medium truncate text-sm hover:underline">{coach.profiles.full_name || "Unnamed"}</p>
                             <p className="text-xs text-muted-foreground truncate">{coach.profiles.email}</p>
                           </div>
                         </div>
@@ -654,7 +660,10 @@ const AdminCoaches = () => {
                   />
                 </div>
                 
-                <div className="flex items-start gap-4 mb-4 pr-16">
+                <div 
+                  className="flex items-start gap-4 mb-4 pr-16 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => handleEditCoach(coach)}
+                >
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={coach.profiles.avatar_url || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary">
@@ -662,7 +671,7 @@ const AdminCoaches = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold truncate">
+                    <h3 className="font-bold truncate hover:underline">
                       {coach.profiles.full_name || "Unnamed Coach"}
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
