@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { FormattedMessage } from "@/components/ui/formatted-message";
 
 interface Message {
   role: "user" | "assistant";
@@ -139,7 +140,11 @@ const SupportChatBubble = () => {
                         : "bg-muted text-foreground"
                     }`}
                   >
-                    {message.content}
+                    {message.role === "user" ? (
+                      message.content
+                    ) : (
+                      <FormattedMessage content={message.content} className="text-sm" />
+                    )}
                   </div>
                 </div>
               ))}

@@ -17,6 +17,7 @@ import { MessageLimitBanner } from "@/components/MessageLimitBanner";
 import { GuestLimitModal } from "@/components/GuestLimitModal";
 import { GuestMessageBanner } from "@/components/GuestMessageBanner";
 import { SubscriptionLimitModal } from "@/components/SubscriptionLimitModal";
+import { FormattedMessage } from "@/components/ui/formatted-message";
 
 const ChatActive = () => {
   const { coachSlug } = useParams();
@@ -195,7 +196,11 @@ const ChatActive = () => {
                   ? "bg-primary text-primary-foreground" 
                   : "bg-muted"
               }`}>
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === "user" ? (
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                ) : (
+                  <FormattedMessage content={msg.content} className="text-sm" />
+                )}
               </div>
               <span className="text-xs text-muted-foreground">{msg.timestamp}</span>
             </div>
