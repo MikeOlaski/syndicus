@@ -196,18 +196,45 @@ const AdminCoaches = () => {
     }
   };
 
-  const toggleVerification = async (coachId: string, currentStatus: boolean) => {
+  const toggleVerification = async (coachId: string, currentStatus: boolean, coachUserId: string) => {
     try {
+      // Get current user for audit logging
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in to perform this action");
+      }
+
+      const newStatus = !currentStatus;
+
+      // Update coach verification status
       const { error } = await supabase
         .from("coach_profiles")
-        .update({ is_verified: !currentStatus })
+        .update({ is_verified: newStatus })
         .eq("id", coachId);
 
       if (error) throw error;
 
+      // Log admin action for audit trail
+      await supabase
+        .from("admin_actions")
+        .insert({
+          admin_id: user.id,
+          target_user_id: coachUserId,
+          action_type: newStatus ? "verify_coach" : "unverify_coach",
+          details: { coach_profile_id: coachId, new_status: newStatus },
+        });
+
+      // If unverifying, also hide from homepage (business rule)
+      if (!newStatus) {
+        await supabase
+          .from("coach_profiles")
+          .update({ show_on_homepage: false })
+          .eq("id", coachId);
+      }
+
       toast({
         title: "Success",
-        description: `Coach ${!currentStatus ? "verified" : "unverified"} successfully`,
+        description: `Coach ${newStatus ? "verified" : "unverified"} successfully`,
       });
 
       fetchCoaches();
@@ -221,18 +248,46 @@ const AdminCoaches = () => {
     }
   };
 
-  const toggleHomepageVisibility = async (coachId: string, currentStatus: boolean) => {
+  const toggleHomepageVisibility = async (coachId: string, currentStatus: boolean, isVerified: boolean, coachUserId: string) => {
     try {
+      // Business rule: Only verified coaches can be shown on homepage
+      if (!currentStatus && !isVerified) {
+        toast({
+          title: "Cannot show on homepage",
+          description: "Coach must be verified before being shown on homepage",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get current user for audit logging
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("You must be logged in to perform this action");
+      }
+
+      const newStatus = !currentStatus;
+
       const { error } = await supabase
         .from("coach_profiles")
-        .update({ show_on_homepage: !currentStatus })
+        .update({ show_on_homepage: newStatus })
         .eq("id", coachId);
 
       if (error) throw error;
 
+      // Log admin action for audit trail
+      await supabase
+        .from("admin_actions")
+        .insert({
+          admin_id: user.id,
+          target_user_id: coachUserId,
+          action_type: newStatus ? "show_on_homepage" : "hide_from_homepage",
+          details: { coach_profile_id: coachId, new_status: newStatus },
+        });
+
       toast({
         title: "Success",
-        description: `Coach ${!currentStatus ? "now visible" : "hidden"} on homepage`,
+        description: `Coach ${newStatus ? "now visible" : "hidden"} on homepage`,
       });
 
       fetchCoaches();
@@ -542,7 +597,7 @@ const AdminCoaches = () => {
                       <TableCell>
                         <Switch
                           checked={coach.show_on_homepage || false}
-                          onCheckedChange={() => toggleHomepageVisibility(coach.id, coach.show_on_homepage || false)}
+                          onCheckedChange={() => toggleHomepageVisibility(coach.id, coach.show_on_homepage || false, coach.is_verified, coach.user_id)}
                           aria-label="Show on homepage"
                         />
                       </TableCell>
@@ -557,7 +612,7 @@ const AdminCoaches = () => {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
-                            onClick={() => toggleVerification(coach.id, coach.is_verified)}
+                            onClick={() => toggleVerification(coach.id, coach.is_verified, coach.user_id)}
                             variant="ghost"
                             size="sm"
                           >
@@ -627,7 +682,7 @@ const AdminCoaches = () => {
                             Edit
                           </Button>
                           <Button
-                            onClick={() => toggleVerification(coach.id, coach.is_verified)}
+                            onClick={() => toggleVerification(coach.id, coach.is_verified, coach.user_id)}
                             variant={coach.is_verified ? "outline" : "default"}
                             size="sm"
                             className="flex-1 h-7 text-xs"
@@ -655,7 +710,7 @@ const AdminCoaches = () => {
                   <Globe className={`w-4 h-4 ${coach.show_on_homepage ? 'text-primary' : 'text-muted-foreground'}`} />
                   <Switch
                     checked={coach.show_on_homepage || false}
-                    onCheckedChange={() => toggleHomepageVisibility(coach.id, coach.show_on_homepage || false)}
+                    onCheckedChange={() => toggleHomepageVisibility(coach.id, coach.show_on_homepage || false, coach.is_verified, coach.user_id)}
                     aria-label="Show on homepage"
                   />
                 </div>
@@ -788,7 +843,7 @@ const AdminCoaches = () => {
                     Edit
                   </Button>
                   <Button
-                    onClick={() => toggleVerification(coach.id, coach.is_verified)}
+                    onClick={() => toggleVerification(coach.id, coach.is_verified, coach.user_id)}
                     variant={coach.is_verified ? "outline" : "default"}
                     size="sm"
                     className="flex-1"

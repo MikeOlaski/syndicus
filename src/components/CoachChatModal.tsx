@@ -105,10 +105,36 @@ export const CoachChatModal = ({
 
       const data = await response.json();
       
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format from webhook');
+      }
+      
+      // Extract response content with validation - never use JSON.stringify as fallback
+      let responseContent: string;
+      if (typeof data.response === 'string') {
+        responseContent = data.response;
+      } else if (typeof data.output === 'string') {
+        responseContent = data.output;
+      } else if (typeof data.message === 'string') {
+        responseContent = data.message;
+      } else {
+        throw new Error('Invalid response content from webhook');
+      }
+      
+      // Sanitize and limit content length
+      const sanitizedContent = responseContent
+        .slice(0, 50000) // Enforce length limit
+        .trim();
+      
+      if (!sanitizedContent) {
+        throw new Error('Empty response from webhook');
+      }
+      
       const assistantMessage: Message = {
         id: generateId(),
         role: "assistant",
-        content: data.response || data.output || data.message || JSON.stringify(data),
+        content: sanitizedContent,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
