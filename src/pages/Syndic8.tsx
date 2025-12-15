@@ -5,21 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Users, MessageCircle, Zap, Globe, Network, Bot, TrendingUp, Search } from "lucide-react";
-
 const Syndic8 = () => {
   const navigate = useNavigate();
-
-  const categories = [
-    "Leadership",
-    "Wellness",
-    "Career",
-    "Business",
-    "Relationships",
-    "Performance",
-  ];
-
-  return (
-    <div className="min-h-screen">
+  const categories = ["Leadership", "Wellness", "Career", "Business", "Relationships", "Performance"];
+  return <div className="min-h-screen">
       <Header />
       
       {/* Hero Section */}
@@ -28,9 +17,7 @@ const Syndic8 = () => {
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
             <span className="bg-gradient-primary bg-clip-text text-transparent">Council of Minds</span>
           </h1>
-          <p className="text-xl text-foreground font-medium mb-4">
-            Syndicated Experts for Balanced Perspectives
-          </p>
+          <p className="text-xl text-foreground font-medium mb-4">Combine Syndicated Experts for Balanced Perspectives</p>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Get varied, balanced insights on your toughest challenges. Multiple expert perspectives 
             working together to deliver comprehensive recommendations you can trust.
@@ -314,29 +301,17 @@ const Syndic8 = () => {
           <div className="bg-white/20 backdrop-blur-sm p-8 rounded-2xl border border-white/20">
             <div className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                placeholder="Search coaching specializations, topics, or expertise..."
-                className="pl-12 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground"
-              />
-              <Button 
-                className="absolute right-2 top-1/2 -translate-y-1/2"
-                variant="outline"
-              >
+              <Input placeholder="Search coaching specializations, topics, or expertise..." className="pl-12 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground" />
+              <Button className="absolute right-2 top-1/2 -translate-y-1/2" variant="outline">
                 <Search className="w-4 h-4 mr-2" />
                 Advanced Search
               </Button>
             </div>
 
             <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map((category) => (
-                <Badge
-                  key={category}
-                  variant="outline"
-                  className="cursor-pointer bg-white text-foreground hover:bg-white/90 transition-colors px-4 py-2 border-white/50"
-                >
+              {categories.map(category => <Badge key={category} variant="outline" className="cursor-pointer bg-white text-foreground hover:bg-white/90 transition-colors px-4 py-2 border-white/50">
                   {category}
-                </Badge>
-              ))}
+                </Badge>)}
             </div>
           </div>
         </div>
@@ -353,17 +328,10 @@ const Syndic8 = () => {
             shared and scaled globally.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/auth')}
-            >
+            <Button size="lg" onClick={() => navigate('/auth')}>
               🚀 Join as Partner
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => navigate('/contact')}
-            >
+            <Button size="lg" variant="outline" onClick={() => navigate('/contact')}>
               📺 Request Demo
             </Button>
           </div>
@@ -415,8 +383,6 @@ const Syndic8 = () => {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Syndic8;
