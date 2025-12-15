@@ -1,13 +1,34 @@
+import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Users, MessageCircle, Zap, Globe, Network, Bot, TrendingUp, Search } from "lucide-react";
+import { Users, MessageCircle, Zap, Globe, Network, Bot, TrendingUp, Search, X } from "lucide-react";
+import { Syndic8SearchResults } from "@/components/Syndic8SearchResults";
+
 const Syndic8 = () => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
   const categories = ["Leadership", "Wellness", "Career", "Business", "Relationships", "Performance"];
+
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(prev => prev === category ? null : category);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Search is triggered automatically via the query
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSelectedCategory(null);
+  };
+
   return <div className="min-h-screen">
       <Header />
       
@@ -46,20 +67,50 @@ const Syndic8 = () => {
           </div>
 
           <div className="bg-white/20 backdrop-blur-sm p-8 rounded-2xl border border-white/20">
-            <div className="relative mb-6">
+            <form onSubmit={handleSearch} className="relative mb-6">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input placeholder="Search coaching specializations, topics, or expertise..." className="pl-12 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground" />
-              <Button className="absolute right-2 top-1/2 -translate-y-1/2" variant="outline">
-                <Search className="w-4 h-4 mr-2" />
-                Advanced Search
-              </Button>
-            </div>
+              <Input 
+                placeholder="Search coaching specializations, topics, or expertise..." 
+                className="pl-12 pr-24 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {(searchQuery || selectedCategory) && (
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  onClick={clearSearch}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </form>
 
             <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map(category => <Badge key={category} variant="outline" className="cursor-pointer bg-white text-foreground hover:bg-white/90 transition-colors px-4 py-2 border-white/50">
+              {categories.map(category => (
+                <Badge 
+                  key={category} 
+                  variant="outline" 
+                  className={`cursor-pointer transition-colors px-4 py-2 ${
+                    selectedCategory === category 
+                      ? "bg-primary text-primary-foreground border-primary" 
+                      : "bg-white text-foreground hover:bg-white/90 border-white/50"
+                  }`}
+                  onClick={() => handleCategoryClick(category)}
+                >
                   {category}
-                </Badge>)}
+                </Badge>
+              ))}
             </div>
+
+            {/* Search Results */}
+            <Syndic8SearchResults 
+              searchQuery={searchQuery} 
+              selectedCategory={selectedCategory} 
+            />
           </div>
         </div>
       </section>
