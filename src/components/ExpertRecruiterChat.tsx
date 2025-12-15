@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Send, Sparkles, Users, Target, Zap, Scale } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { FormattedMessage } from "@/components/ui/formatted-message";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,6 +14,8 @@ interface ExpertRecruiterChatProps {
   initialQuery: string;
   onClose: () => void;
 }
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-advisor`;
 
 const ExpertRecruiterChat = ({ initialQuery, onClose }: ExpertRecruiterChatProps) => {
   const [messages, setMessages] = useState<Message[]>([
@@ -67,56 +68,119 @@ const ExpertRecruiterChat = ({ initialQuery, onClose }: ExpertRecruiterChatProps
     setIsLoading(true);
 
     try {
-      const response = await supabase.functions.invoke("expert-advisor", {
-        body: { 
-          messages: isInitial ? [{ role: "user", content: textToSend }] : 
-                   [...messages, { role: "user", content: textToSend }]
-        }
+      const messagesToSend = isInitial 
+        ? [{ role: "user", content: textToSend }] 
+        : [...messages, { role: "user", content: textToSend }];
+
+      const response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: messagesToSend }),
       });
 
-      if (response.error) throw response.error;
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast({
+            title: "Rate Limited",
+            description: "Too many requests. Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (response.status === 402) {
+          toast({
+            title: "Credits Required",
+            description: "Please add credits to continue using this feature.",
+            variant: "destructive",
+          });
+          return;
+        }
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("No response body");
+      }
 
       // Handle streaming response
-      if (response.data) {
-        const reader = response.data.getReader?.();
-        if (reader) {
-          let assistantContent = "";
-          const decoder = new TextDecoder();
-          
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const text = decoder.decode(value, { stream: true });
-            const lines = text.split("\n");
-            
-            for (const line of lines) {
-              if (line.startsWith("data: ") && line !== "data: [DONE]") {
-                try {
-                  const json = JSON.parse(line.slice(6));
-                  const content = json.choices?.[0]?.delta?.content;
-                  if (content) {
-                    assistantContent += content;
-                    setMessages(prev => {
-                      const last = prev[prev.length - 1];
-                      if (last?.role === "assistant" && prev.length > 1) {
-                        return prev.map((m, i) => 
-                          i === prev.length - 1 ? { ...m, content: assistantContent } : m
-                        );
-                      }
-                      return [...prev, { role: "assistant", content: assistantContent }];
-                    });
-                  }
-                } catch {}
-              }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      let textBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        textBuffer += decoder.decode(value, { stream: true });
+
+        // Process line-by-line
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant") {
+                  return prev.map((m, i) => 
+                    i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                  );
+                }
+                return [...prev, { role: "assistant", content: assistantContent }];
+              });
             }
+          } catch {
+            // Incomplete JSON, put back and wait
+            textBuffer = line + "\n" + textBuffer;
+            break;
           }
-        } else if (typeof response.data === "string") {
-          setMessages(prev => [...prev, { role: "assistant", content: response.data }]);
-        } else if (response.data.content) {
-          setMessages(prev => [...prev, { role: "assistant", content: response.data.content }]);
         }
       }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === "assistant") {
+                  return prev.map((m, i) => 
+                    i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                  );
+                }
+                return [...prev, { role: "assistant", content: assistantContent }];
+              });
+            }
+          } catch {}
+        }
+      }
+
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -258,7 +322,7 @@ const ExpertRecruiterChat = ({ initialQuery, onClose }: ExpertRecruiterChatProps
             </motion.div>
           ))}
           
-          {isLoading && (
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
