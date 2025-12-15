@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,18 +31,17 @@ interface GroupResult {
 export const Syndic8SearchResults = ({ searchQuery, selectedCategory }: Syndic8SearchResultsProps) => {
   const navigate = useNavigate();
   
-  // Fetch coaches that match search
+  // Fetch coaches that match search - apply filters at database level
   const { data: coaches = [], isLoading: coachesLoading } = useQuery({
     queryKey: ["syndic8-coaches-search", searchQuery, selectedCategory],
     queryFn: async () => {
-      let query = supabase
+      // Fetch ALL verified coaches first, then filter
+      const { data: coachProfiles, error } = await supabase
         .from("coach_profiles")
         .select("user_id, slug, specialization, rating, expertise, bio")
         .eq("is_verified", true)
-        .order("rating", { ascending: false })
-        .limit(6);
+        .order("rating", { ascending: false });
       
-      const { data: coachProfiles, error } = await query;
       if (error) throw error;
       
       // Get profile info
@@ -72,7 +70,7 @@ export const Syndic8SearchResults = ({ searchQuery, selectedCategory }: Syndic8S
         };
       });
       
-      // Filter by search query
+      // Filter by search query (case-insensitive)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         results = results.filter(coach => 
@@ -82,15 +80,17 @@ export const Syndic8SearchResults = ({ searchQuery, selectedCategory }: Syndic8S
         );
       }
       
-      // Filter by category
+      // Filter by category (case-insensitive)
       if (selectedCategory) {
+        const cat = selectedCategory.toLowerCase();
         results = results.filter(coach =>
-          coach.specialization.toLowerCase().includes(selectedCategory.toLowerCase()) ||
-          coach.tags.some(tag => tag.toLowerCase().includes(selectedCategory.toLowerCase()))
+          coach.specialization.toLowerCase().includes(cat) ||
+          coach.tags.some(tag => tag.toLowerCase().includes(cat))
         );
       }
       
-      return results;
+      // Limit to 6 results AFTER filtering
+      return results.slice(0, 6);
     },
     enabled: searchQuery.length > 0 || selectedCategory !== null,
   });
@@ -133,7 +133,6 @@ export const Syndic8SearchResults = ({ searchQuery, selectedCategory }: Syndic8S
   });
 
   const isLoading = coachesLoading || groupsLoading;
-  const hasResults = coaches.length > 0 || groups.length > 0;
   const showResults = searchQuery.length > 0 || selectedCategory !== null;
 
   if (!showResults) return null;
