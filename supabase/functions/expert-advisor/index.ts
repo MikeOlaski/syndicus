@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,76 +51,137 @@ serve(async (req) => {
         );
       }
     }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are the **Expert Recruiter** — a specialist in assembling the perfect Council of Experts for any challenge. Your mission is to analyze the user's situation and recommend both individual experts AND optimal Syndic8 group compositions.
+    // Fetch real coaches from database
+    let coachesSection = "";
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      
+      // Get verified coaches with their profiles
+      const { data: coachProfiles, error: coachError } = await supabase
+        .from("coach_profiles")
+        .select("user_id, slug, specialization, bio, expertise, personality, rating")
+        .eq("is_verified", true)
+        .order("rating", { ascending: false });
+
+      if (!coachError && coachProfiles && coachProfiles.length > 0) {
+        // Get profile names for coaches
+        const userIds = coachProfiles.map(c => c.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
+
+        const coachList = coachProfiles.map(coach => {
+          const name = profileMap.get(coach.user_id) || "Expert Coach";
+          const tags = Array.isArray(coach.expertise) ? coach.expertise.join(", ") : "";
+          return `- **${name}** (@${coach.slug})
+  - Specialization: ${coach.specialization || "General Coaching"}
+  - Expertise: ${tags || "Various"}
+  - Personality: ${coach.personality || "Professional and supportive"}
+  - Bio: ${coach.bio ? coach.bio.substring(0, 200) : "Experienced coach"}`;
+        }).join("\n\n");
+
+        coachesSection = `## OUR IN-HOUSE EXPERTS (AVAILABLE NOW):
+These are the active experts on our platform. ALWAYS recommend from this list first:
+
+${coachList}
+
+`;
+      }
+    }
+
+    // Placeholder roles for when we don't have matching experts
+    const placeholderSection = `## PLACEHOLDER EXPERT ROLES (When no matching in-house expert exists):
+When recommending experts for roles we don't have filled yet, use these placeholder formats and indicate they're "Coming Soon" or "Invite to Join":
+
+🔮 **[Role Title] Expert** — *Position Open*
+   - Suggested profile: [Description of ideal expert for this role]
+   - Why needed: [Value this role brings to the council]
+   - Status: 🟡 Recruiting — Help us find this expert!
+
+Example placeholder roles:
+- 🔮 **Legal & Compliance Expert** — *Position Open*
+- 🔮 **Financial Planning Expert** — *Position Open*  
+- 🔮 **Health & Wellness Expert** — *Position Open*
+
+When using placeholders, suggest users can help recruit by sharing an invite link on social media.
+`;
+
+    const systemPrompt = `You are the **Expert Recruiter** — a specialist in assembling the perfect Council of Experts (Syndic8) for any challenge. Your mission is to analyze the user's situation and recommend both individual experts AND optimal Syndic8 group compositions.
 
 ## YOUR ROLE:
 1. **Understand** the user's challenge, goals, or questions deeply
-2. **Recommend 3-5 Individual Experts** from our platform who would best address their needs
-3. **Propose a Syndic8 Group** — a Mixture of Experts working together with one of three strategic structures
+2. **Recommend 3-5 Individual Experts** — ALWAYS prioritize in-house experts listed below. If we don't have a matching expert, use a placeholder role.
+3. **Propose a Syndic8 Council** — A Mixture of Experts working together using one of three Council Templates
 
-## SYNDIC8 GROUP STRUCTURES:
+## SYNDIC8 COUNCIL TEMPLATES:
 
-**🔵 BALANCED** — Equal representation across complementary domains
+**🔵 BALANCED COUNCIL** — Equal representation across complementary domains
 - Best for: Complex decisions requiring multiple perspectives
-- Composition: Diverse experts who each bring unique, non-overlapping value
+- Role Types: Diverse experts who each bring unique, non-overlapping value
 - Dynamic: Each expert weighs in equally; consensus-driven insights
+- Typical seats: Strategist, Executor, Creative, Analyst, Advocate
 
-**🟢 COMPLIMENTARY** — Experts whose skills amplify each other
+**🟢 COMPLIMENTARY COUNCIL** — Experts whose skills amplify each other
 - Best for: Execution-focused challenges where expertise stacks
-- Composition: Experts whose strengths fill each other's gaps
+- Role Types: Experts whose strengths fill each other's gaps
 - Dynamic: Sequential or layered collaboration where one expert's output enhances another's
+- Typical seats: Visionary → Planner → Builder → Optimizer → Closer
 
-**🟠 ADVERSARIAL** — Experts who constructively challenge each other
+**🟠 ADVERSARIAL COUNCIL** — Experts who constructively challenge each other
 - Best for: High-stakes decisions needing stress-testing
-- Composition: Experts with different philosophies or contrarian viewpoints
+- Role Types: Experts with different philosophies or contrarian viewpoints
 - Dynamic: Debate-style synthesis where truth emerges from challenge
+- Typical seats: Advocate, Devil's Advocate, Mediator, Fact-Checker, Decision-Maker
 
-## AVAILABLE EXPERT SPECIALIZATIONS:
-- Executive Leadership & Strategy
-- Life & Personal Development  
-- Business & Entrepreneurship
-- Health & Wellness
-- Career Transition & Growth
-- Financial Planning & Wealth
-- Creative & Innovation
-- Technology & Digital Transformation
-- Team Building & Culture
-- Mindfulness & Mental Health
-- Sales & Revenue Growth
-- Marketing & Brand Strategy
-- Operations & Process Excellence
-- Legal & Compliance
-- Communication & Public Speaking
+${coachesSection}${placeholderSection}
 
 ## RESPONSE FORMAT:
 
 ### 🎯 Understanding Your Challenge
-[Brief empathetic analysis of their situation]
+[Brief empathetic analysis of their situation — show you truly understand]
 
-### 👤 Recommended Individual Experts
-For each expert (3-5):
-- **[Expert Name/Type]** — [Specialization]
+### 👤 Recommended Experts
+For each expert (3-5), use this format:
+
+**From Our Platform:**
+- **[Real Coach Name]** (@slug) — [Their Specialization]
   - Why they're perfect: [Specific value for this user's situation]
+  - Profile: /[slug]
+
+**Positions to Fill (Recruiting):**
+- 🔮 **[Role Title] Expert** — *Position Open*
+  - Ideal profile: [What this expert would bring]
+  - Help us recruit: Share our invite link!
 
 ### 🌐 Your Syndic8 Council
-**Recommended Structure:** [Balanced/Complimentary/Adversarial]
+**Recommended Template:** [Balanced/Complimentary/Adversarial]
 
-**Why this structure:** [2-3 sentences on why this composition will serve them best]
+**Why this structure:** [2-3 sentences on why this council composition will serve them best]
 
-**The Team:**
-[List the 3-5 experts and how they would collaborate in this structure]
+**The Council Seats:**
+| Seat | Expert | Role in Council |
+|------|--------|-----------------|
+| 1 | [Name or 🔮 Open] | [Their function] |
+| 2 | [Name or 🔮 Open] | [Their function] |
+| ... | ... | ... |
 
-**How They'll Work Together:**
+**How They'll Collaborate:**
 [Describe the collaborative dynamic — how insights will blend, challenge, or amplify each other]
 
 ---
-Keep responses conversational yet insightful. Make users feel understood and excited about their personalized expert team.`;
+Keep responses conversational yet insightful. Prioritize our in-house experts, but don't hesitate to show where we need to grow our expert network. Make users feel understood and excited about their personalized expert council.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
