@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { Upload, FileText, Trash2, Plus, Youtube, Mic, Instagram, BookOpen, Archive, HardDrive, Database, Bot, Globe, Twitter, FileCode, StickyNote, MessageSquare, Sparkles, LucideIcon, AudioLines } from "lucide-react";
+import { Upload, FileText, Trash2, Plus, Youtube, Mic, Instagram, BookOpen, Archive, HardDrive, Database, Bot, Globe, Twitter, FileCode, StickyNote, MessageSquare, Sparkles, LucideIcon, AudioLines, Save, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { VoiceNoteModal } from "@/components/VoiceNoteModal";
@@ -35,6 +35,9 @@ const MyTwin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [isSavingWebhook, setIsSavingWebhook] = useState(false);
   const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -55,7 +58,7 @@ const MyTwin = () => {
     notes: { id: "notes", label: "Notes App", description: "Import from Notion, Evernote, etc.", icon: StickyNote, color: "text-amber-500" },
     messaging: { id: "messaging", label: "Messaging App", description: "Import from Slack, Discord, etc.", icon: MessageSquare, color: "text-indigo-500" },
     rag: { id: "rag", label: "Connect RAG (Supabase)", description: "Connect to a Supabase RAG system", icon: Database, color: "text-emerald-500" },
-    agent: { id: "agent", label: "Connect Agent", description: "Connect an AI agent", icon: Bot, color: "text-indigo-500" },
+    agent: { id: "agent", label: "Connect N8N Agent Workflow", description: "Connect to an n8n chat agent workflow", icon: Bot, color: "text-indigo-500" },
     voice_note: { id: "voice_note", label: "Voice Note", description: "Transcribed voice recording", icon: AudioLines, color: "text-violet-500" },
   };
 
@@ -116,6 +119,7 @@ const MyTwin = () => {
 
   useEffect(() => {
     fetchAssets();
+    fetchWebhookUrl();
   }, []);
 
   const fetchAssets = async () => {
@@ -143,7 +147,59 @@ const MyTwin = () => {
     }
   };
 
+  const fetchWebhookUrl = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("coach_profiles")
+        .select("webhook_url")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) throw error;
+      setWebhookUrl(data?.webhook_url || "");
+    } catch (error) {
+      console.error("Error fetching webhook URL:", error);
+    }
+  };
+
+  const handleSaveWebhook = async () => {
+    setIsSavingWebhook(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("coach_profiles")
+        .update({ webhook_url: webhookUrl })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "n8n Webhook URL saved",
+      });
+      setShowWebhookModal(false);
+    } catch (error) {
+      console.error("Error saving webhook:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save webhook URL",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingWebhook(false);
+    }
+  };
+
   const handleSelectAssetType = (typeId: string) => {
+    if (typeId === "agent") {
+      setShowWebhookModal(true);
+      return;
+    }
     setSelectedAssetType(typeId);
     setShowAddModal(true);
   };
@@ -339,6 +395,41 @@ const MyTwin = () => {
           onOpenChange={setShowVoiceModal}
           onSuccess={fetchAssets}
         />
+
+        {/* n8n Webhook URL Modal */}
+        <Dialog open={showWebhookModal} onOpenChange={setShowWebhookModal}>
+          <DialogContent className="sm:max-w-[600px] bg-background">
+            <DialogHeader>
+              <DialogTitle>n8n Webhook URL</DialogTitle>
+              <DialogDescription>
+                Connect this coach to an n8n chat agent workflow
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://n8n.example.com/webhook/..."
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleSaveWebhook}
+                  disabled={isSavingWebhook}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+              </div>
+              {webhookUrl && (
+                <p className="text-xs text-muted-foreground">
+                  Your chat interface will use this webhook to communicate with your n8n agent workflow.
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Add Asset Modal */}
         <Dialog open={showAddModal} onOpenChange={(open) => {
