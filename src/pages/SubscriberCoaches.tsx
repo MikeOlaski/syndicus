@@ -150,7 +150,7 @@ const SubscriberCoaches = () => {
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">{status.limits.daily_messages} messages/day</span>
                 {status.tier === "free" && (
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" onClick={() => navigate("/pricing")}>
                     <Crown className="w-4 h-4 mr-1" />
                     Upgrade
                   </Button>
