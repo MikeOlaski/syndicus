@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, Bot, User } from "lucide-react";
+import { FormattedMessage } from "@/components/ui/formatted-message";
 
 interface Message {
   id: string;
@@ -230,7 +231,14 @@ export const CoachChatModal = ({
                       : "bg-muted"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  {message.role === "assistant" ? (
+                    <FormattedMessage 
+                      content={message.content} 
+                      className="text-sm [&_a]:text-primary [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-2 hover:[&_a]:text-primary/80 [&_p]:my-1 [&_ul]:my-2 [&_li]:my-0.5"
+                    />
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))}
