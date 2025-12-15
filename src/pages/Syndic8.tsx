@@ -33,6 +33,37 @@ const Syndic8 = () => {
         </div>
       </section>
 
+      {/* Network Exploration Section */}
+      <section className="py-16 px-4 bg-gradient-cta">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Explore the Syndic8 Network
+            </h2>
+            <p className="text-white/90 max-w-2xl mx-auto">
+              Search and connect with AI-powered coaching bots across our global network of expertise.
+            </p>
+          </div>
+
+          <div className="bg-white/20 backdrop-blur-sm p-8 rounded-2xl border border-white/20">
+            <div className="relative mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input placeholder="Search coaching specializations, topics, or expertise..." className="pl-12 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground" />
+              <Button className="absolute right-2 top-1/2 -translate-y-1/2" variant="outline">
+                <Search className="w-4 h-4 mr-2" />
+                Advanced Search
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 justify-center">
+              {categories.map(category => <Badge key={category} variant="outline" className="cursor-pointer bg-white text-foreground hover:bg-white/90 transition-colors px-4 py-2 border-white/50">
+                  {category}
+                </Badge>)}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Cohort of Experts Section */}
       <section className="py-20 px-4 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto max-w-6xl">
@@ -186,133 +217,6 @@ const Syndic8 = () => {
             <Button size="lg" variant="secondary" onClick={() => navigate('/auth')}>
               Start Building Your Cohort
             </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center p-6 bg-background rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-primary" />
-              </div>
-              <div className="text-3xl font-bold mb-2">50+</div>
-              <div className="text-sm text-muted-foreground">Network Partners</div>
-            </div>
-
-            <div className="text-center p-6 bg-background rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="w-8 h-8 text-primary" />
-              </div>
-              <div className="text-3xl font-bold mb-2">1M+</div>
-              <div className="text-sm text-muted-foreground">AI Interactions</div>
-            </div>
-
-            <div className="text-center p-6 bg-background rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-primary" />
-              </div>
-              <div className="text-3xl font-bold mb-2">96%</div>
-              <div className="text-sm text-muted-foreground">Success Rate</div>
-            </div>
-
-            <div className="text-center p-6 bg-background rounded-lg">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Globe className="w-8 h-8 text-primary" />
-              </div>
-              <div className="text-3xl font-bold mb-2">120+</div>
-              <div className="text-sm text-muted-foreground">Global Reach</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Powered by AI Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">
-              Powered by Advanced <span className="bg-gradient-primary bg-clip-text text-transparent">AI Technology</span>
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Syndic8 leverages cutting-edge artificial intelligence to create a seamless coaching 
-              ecosystem that scales expertise and delivers personalized experiences at unprecedented levels.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-muted/30 p-6 rounded-lg text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Network className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-3">Syndicated Network</h3>
-              <p className="text-sm text-muted-foreground">
-                Connect with a vast network of AI-powered coaching bots across multiple platforms and specializations.
-              </p>
-            </div>
-
-            <div className="bg-muted/30 p-6 rounded-lg text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Bot className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-3">Advanced AI Technology</h3>
-              <p className="text-sm text-muted-foreground">
-                Experience cutting-edge AI that learns and adapts to provide personalized coaching experiences.
-              </p>
-            </div>
-
-            <div className="bg-muted/30 p-6 rounded-lg text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Globe className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-3">Global Reach</h3>
-              <p className="text-sm text-muted-foreground">
-                Access coaching expertise from around the world, available 24/7 in multiple languages.
-              </p>
-            </div>
-
-            <div className="bg-muted/30 p-6 rounded-lg text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold mb-3">Performance Analytics</h3>
-              <p className="text-sm text-muted-foreground">
-                Track your progress with detailed analytics and insights powered by machine learning.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Network Exploration Section */}
-      <section className="py-16 px-4 bg-gradient-cta">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Explore the Syndic8 Network
-            </h2>
-            <p className="text-white/90 max-w-2xl mx-auto">
-              Search and connect with AI-powered coaching bots across our global network of expertise.
-            </p>
-          </div>
-
-          <div className="bg-white/20 backdrop-blur-sm p-8 rounded-2xl border border-white/20">
-            <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input placeholder="Search coaching specializations, topics, or expertise..." className="pl-12 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground" />
-              <Button className="absolute right-2 top-1/2 -translate-y-1/2" variant="outline">
-                <Search className="w-4 h-4 mr-2" />
-                Advanced Search
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categories.map(category => <Badge key={category} variant="outline" className="cursor-pointer bg-white text-foreground hover:bg-white/90 transition-colors px-4 py-2 border-white/50">
-                  {category}
-                </Badge>)}
-            </div>
           </div>
         </div>
       </section>
