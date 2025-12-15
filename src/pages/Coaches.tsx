@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { DollarSign, Users, Clock, TrendingUp, Calendar, Video, Globe, BarChart3, MessageCircle } from "lucide-react";
 import VideoPlayerModal from "@/components/VideoPlayerModal";
+import CoachDirectory from "@/components/CoachDirectory";
 import { useState } from "react";
 
 const Coaches = () => {
@@ -37,6 +38,9 @@ const Coaches = () => {
           </div>
         </div>
       </section>
+
+      {/* Coach Directory */}
+      <CoachDirectory />
 
       {/* Stats Section */}
       <section className="py-16 px-4 bg-muted/30">
