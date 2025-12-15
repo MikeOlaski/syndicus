@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users, ArrowUpDown } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -78,7 +78,18 @@ const AdminCoaches = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [coachToDelete, setCoachToDelete] = useState<Coach | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
+
+  // Calculate paginated coaches
+  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCoaches.length / itemsPerPage);
+  const paginatedCoaches = itemsPerPage === -1 
+    ? filteredCoaches 
+    : filteredCoaches.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  
+  const startIndex = itemsPerPage === -1 ? 1 : (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = itemsPerPage === -1 ? filteredCoaches.length : Math.min(currentPage * itemsPerPage, filteredCoaches.length);
 
   useEffect(() => {
     fetchCoaches();
@@ -122,7 +133,14 @@ const AdminCoaches = () => {
     });
     
     setFilteredCoaches(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [searchQuery, statusFilter, sortBy, coaches]);
+
+  // Reset to page 1 when items per page changes
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(value === "all" ? -1 : parseInt(value));
+    setCurrentPage(1);
+  };
 
   const fetchCoaches = async () => {
     try {
@@ -450,6 +468,18 @@ const AdminCoaches = () => {
                 <Columns3 className="w-4 h-4" />
               </ToggleGroupItem>
             </ToggleGroup>
+            <Select value={itemsPerPage === -1 ? "all" : itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Show" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="flex gap-2">
               <Button onClick={() => setIsManualAddModalOpen(true)} variant="outline" className="gap-2">
                 <UserPlus className="w-4 h-4" />
@@ -553,7 +583,7 @@ const AdminCoaches = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCoaches.map((coach) => (
+                  {paginatedCoaches.map((coach) => (
                     <TableRow key={coach.id}>
                       <TableCell>
                         <div 
@@ -638,7 +668,7 @@ const AdminCoaches = () => {
           /* Kanban View */
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-x-auto">
             {["admin_setup", "onboarding_started", "active", "inactive"].map((status) => {
-              const statusCoaches = filteredCoaches.filter((c) => c.status === status);
+              const statusCoaches = paginatedCoaches.filter((c) => c.status === status);
               return (
                 <div key={status} className="min-w-[280px]">
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b">
@@ -703,7 +733,7 @@ const AdminCoaches = () => {
         ) : (
           /* Grid View (default) */
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredCoaches.map((coach) => (
+            {paginatedCoaches.map((coach) => (
               <Card key={coach.id} className="p-6 hover:shadow-lg transition-shadow relative">
                 {/* Homepage Toggle */}
                 <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -861,6 +891,60 @@ const AdminCoaches = () => {
                 </div>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {filteredCoaches.length > 0 && itemsPerPage !== -1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              Showing {startIndex}-{endIndex} of {filteredCoaches.length} coaches
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      className="w-8 h-8 p-0"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </div>
         )}
 
