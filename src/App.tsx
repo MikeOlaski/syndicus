@@ -15,6 +15,7 @@ import SubscriberOnboarding from "./pages/SubscriberOnboarding";
 import CoachDashboard from "./pages/CoachDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminCoaches from "./pages/AdminCoaches";
+import AdminCoachDetail from "./pages/AdminCoachDetail";
 import AdminSubscribers from "./pages/AdminSubscribers";
 import AdminWebhooks from "./pages/AdminWebhooks";
 import AdminTemplates from "./pages/AdminTemplates";
@@ -70,6 +71,7 @@ const App = () => (
           <Route path="/subscriber-dashboard/profile" element={<SubscriberProfile />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/coaches" element={<AdminCoaches />} />
+          <Route path="/admin-dashboard/coaches/:coachId" element={<AdminCoachDetail />} />
           <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
           <Route path="/admin-dashboard/templates" element={<AdminTemplates />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
