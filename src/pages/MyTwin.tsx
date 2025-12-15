@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { Upload, FileText, Trash2, Plus, Youtube, Mic, Instagram, BookOpen, Archive, HardDrive, Database, Bot, Globe, Twitter, FileCode, StickyNote, MessageSquare, Sparkles, LucideIcon } from "lucide-react";
+import { Upload, FileText, Trash2, Plus, Youtube, Mic, Instagram, BookOpen, Archive, HardDrive, Database, Bot, Globe, Twitter, FileCode, StickyNote, MessageSquare, Sparkles, LucideIcon, AudioLines } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { VoiceNoteModal } from "@/components/VoiceNoteModal";
 
 interface KnowledgeAsset {
   id: string;
@@ -33,6 +34,7 @@ const MyTwin = () => {
   const [assets, setAssets] = useState<KnowledgeAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -54,6 +56,7 @@ const MyTwin = () => {
     messaging: { id: "messaging", label: "Messaging App", description: "Import from Slack, Discord, etc.", icon: MessageSquare, color: "text-indigo-500" },
     rag: { id: "rag", label: "Connect RAG (Supabase)", description: "Connect to a Supabase RAG system", icon: Database, color: "text-emerald-500" },
     agent: { id: "agent", label: "Connect Agent", description: "Connect an AI agent", icon: Bot, color: "text-indigo-500" },
+    voice_note: { id: "voice_note", label: "Voice Note", description: "Transcribed voice recording", icon: AudioLines, color: "text-violet-500" },
   };
 
   // Categories with their asset type IDs
@@ -318,11 +321,24 @@ const MyTwin = () => {
               Build your AI knowledge base by adding content and documents
             </p>
           </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Asset
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowVoiceModal(true)}>
+              <AudioLines className="w-4 h-4 mr-2" />
+              Add Voice Note
+            </Button>
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Asset
+            </Button>
+          </div>
         </div>
+
+        {/* Voice Note Modal */}
+        <VoiceNoteModal
+          open={showVoiceModal}
+          onOpenChange={setShowVoiceModal}
+          onSuccess={fetchAssets}
+        />
 
         {/* Add Asset Modal */}
         <Dialog open={showAddModal} onOpenChange={(open) => {
