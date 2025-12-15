@@ -214,7 +214,10 @@ serve(async (req) => {
         
         console.log(`Using email for bot: ${email} (${providedEmail ? "provided" : "generated"})`);
 
-        // Step 1: Create the auth user
+        // Step 1: Create or find the auth user
+        let newUserId: string | null = null;
+        let isExistingUser = false;
+
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email,
           password,
@@ -225,11 +228,34 @@ serve(async (req) => {
         });
 
         if (authError) {
-          console.error("Error creating auth user for bot:", authError);
+          // Check if user already exists
+          if (authError.message?.includes("already been registered") || authError.code === "email_exists") {
+            console.log(`Email ${email} already exists, looking up existing user...`);
+            
+            // Find the existing user by email
+            const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
+            
+            if (!listError && existingUsers?.users) {
+              const existingUser = existingUsers.users.find(u => u.email === email);
+              if (existingUser) {
+                newUserId = existingUser.id;
+                isExistingUser = true;
+                console.log(`Found existing user with ID: ${newUserId}`);
+              }
+            }
+            
+            if (!newUserId) {
+              console.error("Could not find existing user with email:", email);
+            }
+          } else {
+            console.error("Error creating auth user for bot:", authError);
+          }
         } else {
-          const newUserId = authData.user.id;
-          console.log(`Created auth user for bot with ID: ${newUserId}`);
+          newUserId = authData.user.id;
+          console.log(`Created new auth user for bot with ID: ${newUserId}`);
+        }
 
+        if (newUserId) {
           // Step 2: Update the profiles table
           await supabase
             .from("profiles")
@@ -239,46 +265,74 @@ serve(async (req) => {
             })
             .eq("id", newUserId);
 
-          // Step 3: Add the coach role
-          const { error: roleInsertError } = await supabase
+          // Step 3: Check if coach role already exists, if not add it
+          const { data: existingRole } = await supabase
             .from("user_roles")
-            .insert({
-              user_id: newUserId,
-              role: "coach",
-            });
+            .select("id")
+            .eq("user_id", newUserId)
+            .eq("role", "coach")
+            .single();
 
-          if (roleInsertError) {
-            console.error("Error inserting coach role:", roleInsertError);
+          if (!existingRole) {
+            const { error: roleInsertError } = await supabase
+              .from("user_roles")
+              .insert({
+                user_id: newUserId,
+                role: "coach",
+              });
+
+            if (roleInsertError) {
+              console.error("Error inserting coach role:", roleInsertError);
+            }
+          } else {
+            console.log("Coach role already exists for user");
           }
 
-          // Step 4: Create the coach profile with slug
-          const slug = generateSlug(bot_name);
-          console.log(`Generated slug for coach: ${slug}`);
-          
-          const { error: coachProfileError } = await supabase
+          // Step 4: Check if coach profile already exists
+          const { data: existingCoachProfile } = await supabase
             .from("coach_profiles")
-            .insert({
-              user_id: newUserId,
-              slug: slug,
-              bio: `AI Persona Bot - ${bot_name}`,
-              specialization: "AI Assistant",
-              status: "admin_setup",
-              is_verified: false,
-              is_claimed: false,
-              rating: 0,
-              total_sessions: 0,
-            });
+            .select("id, slug")
+            .eq("user_id", newUserId)
+            .single();
 
-          if (coachProfileError) {
-            console.error("Error creating coach profile:", coachProfileError);
-          } else {
+          if (existingCoachProfile) {
+            console.log(`Coach profile already exists for user with slug: ${existingCoachProfile.slug}`);
             coachCreated = true;
             createdCoachData = {
               userId: newUserId,
               email,
-              temporaryPassword: password,
+              temporaryPassword: isExistingUser ? "(existing account)" : password,
             };
-            console.log(`Successfully created coach profile for bot: ${bot_name}`);
+          } else {
+            // Create the coach profile with slug
+            const slug = generateSlug(bot_name);
+            console.log(`Generated slug for coach: ${slug}`);
+            
+            const { error: coachProfileError } = await supabase
+              .from("coach_profiles")
+              .insert({
+                user_id: newUserId,
+                slug: slug,
+                bio: `AI Persona Bot - ${bot_name}`,
+                specialization: "AI Assistant",
+                status: "admin_setup",
+                is_verified: false,
+                is_claimed: false,
+                rating: 0,
+                total_sessions: 0,
+              });
+
+            if (coachProfileError) {
+              console.error("Error creating coach profile:", coachProfileError);
+            } else {
+              coachCreated = true;
+              createdCoachData = {
+                userId: newUserId,
+                email,
+                temporaryPassword: isExistingUser ? "(existing account)" : password,
+              };
+              console.log(`Successfully created coach profile for bot: ${bot_name}`);
+            }
           }
         }
       } catch (createError) {
