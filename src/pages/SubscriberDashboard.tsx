@@ -183,7 +183,7 @@ const SubscriberDashboard = () => {
                 </ul>
               </div>
               <div className={`p-4 border rounded-lg ${status?.tier === "plus" ? "border-green-500 bg-green-500/5" : "border-primary/50 bg-primary/5"}`}>
-                <Badge className="mb-2">Plus $27/mo {status?.tier === "plus" && "✓"}</Badge>
+                <Badge className="mb-2">Plus $7/mo {status?.tier === "plus" && "✓"}</Badge>
                 <ul className="space-y-2 text-sm">
                   <li>• 5 coach subscriptions</li>
                   <li>• 50 messages/day per coach</li>
@@ -197,7 +197,7 @@ const SubscriberDashboard = () => {
                 )}
               </div>
               <div className="p-4 border rounded-lg border-yellow-500/50 bg-yellow-500/5">
-                <Badge variant="outline" className="mb-2 border-yellow-500 text-yellow-600">Prime $97/mo</Badge>
+                <Badge variant="outline" className="mb-2 border-yellow-500 text-yellow-600">Prime $27/mo</Badge>
                 <ul className="space-y-2 text-sm">
                   <li>• 17 coach subscriptions</li>
                   <li>• Unlimited messages</li>
