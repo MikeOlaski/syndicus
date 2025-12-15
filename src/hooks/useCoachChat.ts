@@ -6,6 +6,7 @@ import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 
 interface CoachData {
   id: string;
+  profileId: string; // coach_profiles.id for session tracking
   slug: string;
   name: string;
   specialization: string;
@@ -32,6 +33,7 @@ interface Message {
 interface ChatSession {
   sessionId: string;
   coachId: string; // Always UUID for internal storage
+  dbSessionId?: string; // Database session ID for tracking
   createdAt: string;
   lastMessage: string;
   messages: Message[];
@@ -40,6 +42,7 @@ interface ChatSession {
 // LocalStorage helper functions - always use UUID (coachId) for keys
 const getStorageKey = (coachId: string) => `chat_sessions_${coachId}`;
 const getCurrentSessionKey = (coachId: string) => `current_session_${coachId}`;
+const getDbSessionKey = (coachId: string) => `db_session_${coachId}`;
 
 const getSessions = (coachId: string): ChatSession[] => {
   const stored = localStorage.getItem(getStorageKey(coachId));
@@ -67,10 +70,12 @@ export const useCoachChat = (coachSlug: string | undefined) => {
   const [coach, setCoach] = useState<CoachData | null>(null);
   const [isCoachLoading, setIsCoachLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string>("");
+  const [dbSessionId, setDbSessionId] = useState<string | null>(null);
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
   const [showSubscriptionLimitModal, setShowSubscriptionLimitModal] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [coachId, setCoachId] = useState<string>(""); // The UUID
+  const [coachId, setCoachId] = useState<string>(""); // The UUID (user_id)
+  const [coachProfileId, setCoachProfileId] = useState<string>(""); // coach_profiles.id
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Guest message limit tracking
@@ -113,9 +118,94 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     localStorage.setItem(getCurrentSessionKey(coachId), sessionId);
   }, [messages, sessionId, coachId]);
 
-  const createNewSession = useCallback((coachName?: string) => {
+  // Create database session for tracking
+  const createDbSession = useCallback(async (profileId: string, guestSessionId?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from("coach_sessions")
+        .insert({
+          coach_id: profileId,
+          subscriber_id: user?.id || null,
+          guest_session_id: user ? null : guestSessionId,
+          session_type: 'chat',
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error("Error creating db session:", error);
+        return null;
+      }
+      
+      return data.id;
+    } catch (error) {
+      console.error("Error creating db session:", error);
+      return null;
+    }
+  }, []);
+
+  // Update message count in database session
+  const updateDbSessionMessageCount = useCallback(async (dbId: string) => {
+    try {
+      // Get current count and increment
+      const { data: current } = await supabase
+        .from("coach_sessions")
+        .select("message_count")
+        .eq("id", dbId)
+        .single();
+
+      await supabase
+        .from("coach_sessions")
+        .update({ 
+          message_count: (current?.message_count || 0) + 1,
+        })
+        .eq("id", dbId);
+    } catch (error) {
+      console.error("Error updating session message count:", error);
+    }
+  }, []);
+
+  // End database session
+  const endDbSession = useCallback(async (dbId: string) => {
+    try {
+      const { data: session } = await supabase
+        .from("coach_sessions")
+        .select("started_at")
+        .eq("id", dbId)
+        .single();
+
+      if (session) {
+        const startTime = new Date(session.started_at).getTime();
+        const endTime = Date.now();
+        const durationSeconds = Math.floor((endTime - startTime) / 1000);
+
+        await supabase
+          .from("coach_sessions")
+          .update({ 
+            ended_at: new Date().toISOString(),
+            duration_seconds: durationSeconds,
+          })
+          .eq("id", dbId);
+      }
+    } catch (error) {
+      console.error("Error ending db session:", error);
+    }
+  }, []);
+
+  const createNewSession = useCallback(async (coachName?: string) => {
     const newSessionId = generateSessionId();
     setSessionId(newSessionId);
+    
+    // Create database session for tracking
+    if (coachProfileId) {
+      const newDbSessionId = await createDbSession(coachProfileId, newSessionId);
+      setDbSessionId(newDbSessionId);
+      if (coachId && newDbSessionId) {
+        localStorage.setItem(getDbSessionKey(coachId), newDbSessionId);
+      }
+    }
     
     const welcomeMessage: Message = {
       id: "welcome",
@@ -129,7 +219,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     if (coachId) {
       localStorage.setItem(getCurrentSessionKey(coachId), newSessionId);
     }
-  }, [coach?.name, coachId]);
+  }, [coach?.name, coachId, coachProfileId, createDbSession]);
 
   // Fetch coach by slug and resolve to UUID
   useEffect(() => {
@@ -140,7 +230,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         // First, try to find coach by slug
         const { data: coachProfile, error: coachError } = await supabase
           .from("coach_profiles")
-          .select("user_id, slug, specialization, personality, webhook_url, is_claimed, bio, expertise, hourly_rate, website_url, twitter_url, linkedin_url, instagram_url")
+          .select("id, user_id, slug, specialization, personality, webhook_url, is_claimed, bio, expertise, hourly_rate, website_url, twitter_url, linkedin_url, instagram_url")
           .eq("slug", coachSlug)
           .maybeSingle();
 
@@ -153,7 +243,9 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         }
 
         const resolvedCoachId = coachProfile.user_id;
+        const resolvedProfileId = coachProfile.id;
         setCoachId(resolvedCoachId);
+        setCoachProfileId(resolvedProfileId);
 
         // Fetch user profile
         const { data: profile, error: profileError } = await supabase
@@ -166,6 +258,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
 
         const coachData: CoachData = {
           id: resolvedCoachId,
+          profileId: resolvedProfileId,
           slug: coachProfile.slug || coachSlug,
           name: profile?.full_name || "Coach",
           specialization: coachProfile.specialization || "General Coaching",
@@ -191,6 +284,12 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         const currentSessionId = localStorage.getItem(getCurrentSessionKey(resolvedCoachId));
         const existingSession = existingSessions.find(s => s.sessionId === currentSessionId);
 
+        // Check for existing db session
+        const storedDbSessionId = localStorage.getItem(getDbSessionKey(resolvedCoachId));
+        if (storedDbSessionId) {
+          setDbSessionId(storedDbSessionId);
+        }
+
         if (existingSession && existingSession.messages.length > 0) {
           // Resume existing session
           setSessionId(existingSession.sessionId);
@@ -199,6 +298,13 @@ export const useCoachChat = (coachSlug: string | undefined) => {
           // Create new session
           const newSessionId = generateSessionId();
           setSessionId(newSessionId);
+          
+          // Create database session
+          const newDbSessionId = await createDbSession(resolvedProfileId, newSessionId);
+          setDbSessionId(newDbSessionId);
+          if (newDbSessionId) {
+            localStorage.setItem(getDbSessionKey(resolvedCoachId), newDbSessionId);
+          }
           
           const welcomeMessage: Message = {
             id: "welcome",
@@ -218,7 +324,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     };
 
     fetchCoach();
-  }, [coachSlug]);
+  }, [coachSlug, createDbSession]);
 
   const loadSession = useCallback((session: ChatSession) => {
     setSessionId(session.sessionId);
@@ -228,9 +334,14 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     }
   }, [coachId]);
 
-  const deleteSession = useCallback((sessionIdToDelete: string, e?: React.MouseEvent) => {
+  const deleteSession = useCallback(async (sessionIdToDelete: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!coachId) return;
+
+    // End the database session before deleting
+    if (dbSessionId && sessionIdToDelete === sessionId) {
+      await endDbSession(dbSessionId);
+    }
 
     const allSessions = getSessions(coachId);
     const filtered = allSessions.filter(s => s.sessionId !== sessionIdToDelete);
@@ -239,14 +350,14 @@ export const useCoachChat = (coachSlug: string | undefined) => {
 
     // If deleting current session, create a new one
     if (sessionIdToDelete === sessionId) {
-      createNewSession();
+      await createNewSession();
     }
 
     toast({
       title: "Chat deleted",
       description: "The chat session has been removed.",
     });
-  }, [coachId, sessionId, createNewSession, toast]);
+  }, [coachId, sessionId, dbSessionId, createNewSession, endDbSession, toast]);
 
   const sendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || message;
@@ -344,6 +455,12 @@ export const useCoachChat = (coachSlug: string | undefined) => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Update database session message count (count both user and assistant messages)
+      if (dbSessionId) {
+        await updateDbSessionMessageCount(dbSessionId);
+        await updateDbSessionMessageCount(dbSessionId);
+      }
     } catch (error: any) {
       console.error("Chat error:", error);
       toast({

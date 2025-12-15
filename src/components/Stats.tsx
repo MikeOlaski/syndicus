@@ -19,16 +19,20 @@ const Stats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch active (verified) coaches count and total sessions
-        const { data: coachData, error: coachError } = await supabase
+        // Fetch active (verified) coaches count
+        const { count: coachCount, error: coachError } = await supabase
           .from("coach_profiles")
-          .select("total_sessions")
+          .select("*", { count: "exact", head: true })
           .eq("is_verified", true);
 
         if (coachError) throw coachError;
 
-        const activeCoaches = coachData?.length || 0;
-        const totalSessions = coachData?.reduce((sum, coach) => sum + (coach.total_sessions || 0), 0) || 0;
+        // Fetch total sessions from coach_sessions table (real-time accurate)
+        const { count: sessionCount, error: sessionError } = await supabase
+          .from("coach_sessions")
+          .select("*", { count: "exact", head: true });
+
+        if (sessionError) throw sessionError;
 
         // Fetch Syndic8 groups count
         const { count: syndic8Count, error: syndic8Error } = await supabase
@@ -38,8 +42,8 @@ const Stats = () => {
         if (syndic8Error) throw syndic8Error;
 
         setStats({
-          activeCoaches,
-          totalSessions,
+          activeCoaches: coachCount || 0,
+          totalSessions: sessionCount || 0,
           activeSyndic8s: syndic8Count || 0,
         });
       } catch (error) {

@@ -148,6 +148,70 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_sessions: {
+        Row: {
+          coach_id: string
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          guest_session_id: string | null
+          id: string
+          message_count: number
+          session_type: string
+          started_at: string
+          subscriber_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          guest_session_id?: string | null
+          id?: string
+          message_count?: number
+          session_type?: string
+          started_at?: string
+          subscriber_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          guest_session_id?: string | null
+          id?: string
+          message_count?: number
+          session_type?: string
+          started_at?: string
+          subscriber_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_sessions_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_sessions_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           coach_id: string
