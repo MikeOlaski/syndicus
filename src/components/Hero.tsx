@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ExpertAdvisorChat from "./ExpertAdvisorChat";
+import ExpertRecruiterChat from "./ExpertRecruiterChat";
 import VideoPlayerModal from "./VideoPlayerModal";
+
 const Hero = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showAdvisor, setShowAdvisor] = useState(false);
+  const [showRecruiter, setShowRecruiter] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const scrollToCoaches = () => {
     const coachSection = document.querySelector('#coach-directory');
@@ -18,14 +19,8 @@ const Hero = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Check if it's a complex query (more than a few words)
-      const wordCount = searchQuery.trim().split(/\s+/).length;
-      if (wordCount > 5 || searchQuery.includes('?') || searchQuery.includes('help')) {
-        setShowAdvisor(true);
-      } else {
-        // Simple search - scroll to coaches
-        scrollToCoaches();
-      }
+      // Any query opens the Expert Recruiter in focus mode
+      setShowRecruiter(true);
     }
   };
   return <>
@@ -69,10 +64,15 @@ const Hero = () => {
         </div>
       </section>
 
-      {showAdvisor && <ExpertAdvisorChat initialQuery={searchQuery} onClose={() => {
-      setShowAdvisor(false);
-      setSearchQuery("");
-    }} />}
+      {showRecruiter && (
+        <ExpertRecruiterChat 
+          initialQuery={searchQuery} 
+          onClose={() => {
+            setShowRecruiter(false);
+            setSearchQuery("");
+          }} 
+        />
+      )}
 
       <VideoPlayerModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} />
     </>;
