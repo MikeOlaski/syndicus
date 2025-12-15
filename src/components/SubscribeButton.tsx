@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, UserMinus, Loader2, Lock } from "lucide-react";
+import { UserPlus, UserMinus, Loader2, Lock, Crown } from "lucide-react";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,6 +23,7 @@ export const SubscribeButton = ({
   showStatus = true,
   className = "",
 }: SubscribeButtonProps) => {
+  const navigate = useNavigate();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,6 +58,12 @@ export const SubscribeButton = ({
       return;
     }
 
+    // If limit reached and not subscribed, redirect to pricing
+    if (!canSubscribe && !isSubscribed) {
+      navigate("/pricing");
+      return;
+    }
+
     setIsProcessing(true);
     if (isSubscribed) {
       const success = await unsubscribeFromCoach(coachId);
@@ -67,6 +75,9 @@ export const SubscribeButton = ({
     setIsProcessing(false);
   };
 
+  const canSubscribe = !isSubscribed && (status?.canSubscribeToMore ?? true);
+  const isLimitReached = !isSubscribed && !canSubscribe && isLoggedIn;
+
   if (isChecking) {
     return (
       <Button variant={variant} size={size} disabled className={className}>
@@ -75,13 +86,13 @@ export const SubscribeButton = ({
     );
   }
 
-  const canSubscribe = !isSubscribed && (status?.canSubscribeToMore ?? true);
-  const isDisabled = isProcessing || (!isSubscribed && !canSubscribe && isLoggedIn);
+  // isLimitReached buttons should NOT be disabled - they navigate to pricing
+  const isDisabled = isProcessing;
 
   return (
     <div className="flex flex-col gap-1">
       <Button
-        variant={isSubscribed ? "outline" : variant}
+        variant={isSubscribed ? "outline" : isLimitReached ? "destructive" : variant}
         size={size}
         onClick={handleClick}
         disabled={isDisabled}
@@ -93,6 +104,8 @@ export const SubscribeButton = ({
           <UserMinus className="w-4 h-4 mr-2" />
         ) : !isLoggedIn ? (
           <Lock className="w-4 h-4 mr-2" />
+        ) : isLimitReached ? (
+          <Crown className="w-4 h-4 mr-2" />
         ) : (
           <UserPlus className="w-4 h-4 mr-2" />
         )}
@@ -100,8 +113,8 @@ export const SubscribeButton = ({
           ? "Subscribed" 
           : !isLoggedIn 
           ? "Sign in to Subscribe"
-          : !canSubscribe 
-          ? "Limit Reached" 
+          : isLimitReached 
+          ? "Limit Reached - Upgrade" 
           : "Subscribe"}
       </Button>
       
