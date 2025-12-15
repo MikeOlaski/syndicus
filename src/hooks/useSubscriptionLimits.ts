@@ -166,10 +166,26 @@ export const useSubscriptionLimits = () => {
         return false;
       }
 
-      if (!status?.canSubscribeToMore) {
+      // Fresh server-side check to prevent race conditions
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscriber_tier")
+        .eq("id", session.user.id)
+        .single();
+
+      const tier = (profile?.subscriber_tier || "free") as "free" | "plus" | "prime";
+      const maxCoaches = tier === "prime" ? 17 : tier === "plus" ? 5 : 3;
+
+      const { count: currentCount } = await supabase
+        .from("subscriptions")
+        .select("*", { count: "exact", head: true })
+        .eq("subscriber_id", session.user.id)
+        .eq("status", "active");
+
+      if ((currentCount || 0) >= maxCoaches) {
         toast({
           title: "Subscription limit reached",
-          description: `Free accounts can subscribe to ${status?.limits.max_coaches} coaches. Upgrade to subscribe to more!`,
+          description: `Your ${tier} plan allows ${maxCoaches} coaches. Upgrade to subscribe to more!`,
           variant: "destructive",
         });
         return false;
