@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users, ArrowUpDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useViewPreferences } from "@/hooks/useViewPreferences";
 
 interface Coach {
   id: string;
@@ -63,14 +64,18 @@ interface Coach {
 
 type ViewMode = "grid" | "table" | "kanban";
 
+const DEFAULT_VIEW_PREFERENCES = {
+  viewMode: "grid" as ViewMode,
+  sortBy: "newest",
+  statusFilter: "all",
+  itemsPerPage: 10,
+};
+
 const AdminCoaches = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [filteredCoaches, setFilteredCoaches] = useState<Coach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("newest");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -79,8 +84,15 @@ const AdminCoaches = () => {
   const [coachToDelete, setCoachToDelete] = useState<Coach | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { toast } = useToast();
+
+  // Persistent view preferences
+  const { preferences, updatePreference, resetToDefaults } = useViewPreferences({
+    storageKey: "admin_coaches_view_prefs",
+    defaults: DEFAULT_VIEW_PREFERENCES,
+  });
+
+  const { viewMode, sortBy, statusFilter, itemsPerPage } = preferences;
 
   // Calculate paginated coaches
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCoaches.length / itemsPerPage);
@@ -138,7 +150,7 @@ const AdminCoaches = () => {
 
   // Reset to page 1 when items per page changes
   const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(value === "all" ? -1 : parseInt(value));
+    updatePreference("itemsPerPage", value === "all" ? -1 : parseInt(value));
     setCurrentPage(1);
   };
 
@@ -425,7 +437,7 @@ const AdminCoaches = () => {
             </div>
             <div className="flex gap-2 items-center">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => updatePreference("statusFilter", v)}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -443,7 +455,7 @@ const AdminCoaches = () => {
             </div>
             <div className="flex gap-2 items-center">
               <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={sortBy} onValueChange={(v) => updatePreference("sortBy", v)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -457,7 +469,7 @@ const AdminCoaches = () => {
                 </SelectContent>
               </Select>
             </div>
-            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as ViewMode)} className="border rounded-md">
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && updatePreference("viewMode", value as ViewMode)} className="border rounded-md">
               <ToggleGroupItem value="grid" aria-label="Grid view" className="px-3">
                 <LayoutGrid className="w-4 h-4" />
               </ToggleGroupItem>
@@ -480,6 +492,14 @@ const AdminCoaches = () => {
                 <SelectItem value="all">All</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={resetToDefaults}
+              title="Reset to default view"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
             <div className="flex gap-2">
               <Button onClick={() => setIsManualAddModalOpen(true)} variant="outline" className="gap-2">
                 <UserPlus className="w-4 h-4" />

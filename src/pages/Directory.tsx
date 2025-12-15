@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCoaches } from "@/hooks/useCoaches";
+import { useViewPreferences } from "@/hooks/useViewPreferences";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -17,15 +18,27 @@ import {
   DollarSign,
   Filter,
   Grid3X3,
-  List
+  List,
+  RotateCcw
 } from "lucide-react";
+
+const DEFAULT_DIRECTORY_PREFS = {
+  viewMode: "grid" as "grid" | "list",
+};
 
 const Directory = () => {
   const navigate = useNavigate();
   const { data: coaches = [], isLoading, error } = useCoaches();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // Persistent view preferences
+  const { preferences, updatePreference, resetToDefaults } = useViewPreferences({
+    storageKey: "directory_view_prefs",
+    defaults: DEFAULT_DIRECTORY_PREFS,
+  });
+
+  const { viewMode } = preferences;
 
   // Get unique tags from all coaches
   const allTags = Array.from(
@@ -93,7 +106,7 @@ const Directory = () => {
                   variant={viewMode === "grid" ? "default" : "outline"}
                   size="icon"
                   className="h-12 w-12"
-                  onClick={() => setViewMode("grid")}
+                  onClick={() => updatePreference("viewMode", "grid")}
                 >
                   <Grid3X3 className="w-5 h-5" />
                 </Button>
@@ -101,9 +114,18 @@ const Directory = () => {
                   variant={viewMode === "list" ? "default" : "outline"}
                   size="icon"
                   className="h-12 w-12"
-                  onClick={() => setViewMode("list")}
+                  onClick={() => updatePreference("viewMode", "list")}
                 >
                   <List className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-12 w-12"
+                  onClick={resetToDefaults}
+                  title="Reset to default view"
+                >
+                  <RotateCcw className="w-4 h-4" />
                 </Button>
               </div>
             </div>
