@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle, XCircle, Search, Mail, Calendar, Star, Briefcase, Edit, Filter, UserPlus, Trash2, AlertTriangle, Bot, Globe, LayoutGrid, Table, Columns3, ExternalLink, Users, ArrowUpDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Table as TableComponent,
@@ -72,6 +72,7 @@ const DEFAULT_VIEW_PREFERENCES = {
 };
 
 const AdminCoaches = () => {
+  const navigate = useNavigate();
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [filteredCoaches, setFilteredCoaches] = useState<Coach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -362,8 +363,7 @@ const AdminCoaches = () => {
   };
 
   const handleEditCoach = (coach: Coach) => {
-    setSelectedCoach(coach);
-    setIsEditModalOpen(true);
+    navigate(`/admin-dashboard/coaches/${coach.id}`);
   };
 
   const handleDeleteClick = (coach: Coach) => {
