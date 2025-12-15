@@ -53,84 +53,56 @@ const ExpertAdvisorChat = ({ initialQuery, onClose }: ExpertAdvisorChatProps) =>
     setIsLoading(true);
 
     try {
-      // Get user session for authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to use the Expert Advisor.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/expert-advisor`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            messages: isInitial ? [{ role: "user", content: textToSend }] : 
-                     [...messages, { role: "user", content: textToSend }],
-          }),
+      const response = await supabase.functions.invoke("expert-advisor", {
+        body: { 
+          messages: isInitial ? [{ role: "user", content: textToSend }] : 
+                   [...messages, { role: "user", content: textToSend }]
         }
-      );
+      });
 
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to start stream");
-      }
+      if (response.error) throw response.error;
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let assistantContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+      // Handle streaming response
+      if (response.data) {
+        const reader = response.data.getReader?.();
+        if (reader) {
+          let assistantContent = "";
+          const decoder = new TextDecoder();
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
             
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return prev.map((m, i) =>
-                    i === prev.length - 1 ? { ...m, content: assistantContent } : m
-                  );
-                }
-                return [...prev, { role: "assistant", content: assistantContent }];
-              });
+            const text = decoder.decode(value, { stream: true });
+            const lines = text.split("\n");
+            
+            for (const line of lines) {
+              if (line.startsWith("data: ") && line !== "data: [DONE]") {
+                try {
+                  const json = JSON.parse(line.slice(6));
+                  const content = json.choices?.[0]?.delta?.content;
+                  if (content) {
+                    assistantContent += content;
+                    setMessages(prev => {
+                      const last = prev[prev.length - 1];
+                      if (last?.role === "assistant" && prev.length > 1) {
+                        return prev.map((m, i) => 
+                          i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                        );
+                      }
+                      return [...prev, { role: "assistant", content: assistantContent }];
+                    });
+                  }
+                } catch {}
+              }
             }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
           }
+        } else if (typeof response.data === "string") {
+          setMessages(prev => [...prev, { role: "assistant", content: response.data }]);
+        } else if (response.data.content) {
+          setMessages(prev => [...prev, { role: "assistant", content: response.data.content }]);
         }
       }
-
-      setIsLoading(false);
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -138,6 +110,7 @@ const ExpertAdvisorChat = ({ initialQuery, onClose }: ExpertAdvisorChatProps) =>
         description: "Failed to get response. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
