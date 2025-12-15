@@ -95,9 +95,9 @@ const MyTwin = () => {
       label: "Snippets", 
       typeIds: ["snippet"] 
     },
-    notesApps: { 
+  notesApps: { 
       label: "Notes Apps", 
-      typeIds: ["gdrive", "notes"] 
+      typeIds: ["voice_note", "gdrive", "notes"] 
     },
     messagingApps: { 
       label: "Messaging Apps", 
@@ -200,6 +200,10 @@ const MyTwin = () => {
   const handleSelectAssetType = (typeId: string) => {
     if (typeId === "agent") {
       setShowWebhookModal(true);
+      return;
+    }
+    if (typeId === "voice_note") {
+      setShowVoiceModal(true);
       return;
     }
     setSelectedAssetType(typeId);
