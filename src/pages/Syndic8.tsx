@@ -26,12 +26,14 @@ const Syndic8 = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Welcome to <span className="bg-gradient-primary bg-clip-text text-transparent">Syndic8</span>
+            <span className="bg-gradient-primary bg-clip-text text-transparent">Council of Minds</span>
           </h1>
+          <p className="text-xl text-foreground font-medium mb-4">
+            Syndicated Experts for Balanced Perspectives
+          </p>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            The next evolution of AI-powered coaching networks. Connect, collaborate, and scale your 
-            coaching practice through our advanced syndication platform that brings together the world's 
-            best coaching minds.
+            Get varied, balanced insights on your toughest challenges. Multiple expert perspectives 
+            working together to deliver comprehensive recommendations you can trust.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button size="lg" onClick={() => navigate('/auth')}>
@@ -298,29 +300,30 @@ const Syndic8 = () => {
       </section>
 
       {/* Network Exploration Section */}
-      <section className="py-16 px-4 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent">
+      <section className="py-16 px-4 bg-gradient-cta">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-white mb-4">
               Explore the Syndic8 Network
             </h2>
-            <p className="text-white/80 max-w-2xl mx-auto">
+            <p className="text-white/90 max-w-2xl mx-auto">
               Search and connect with AI-powered coaching bots across our global network of expertise.
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-sm p-8 rounded-lg">
+          <div className="bg-white/20 backdrop-blur-sm p-8 rounded-2xl border border-white/20">
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="Search coaching specializations, topics, or expertise..."
-                className="pl-12 h-14 bg-white/20 border-white/30 text-white placeholder:text-white/60"
+                className="pl-12 h-14 bg-background border-border text-foreground placeholder:text-muted-foreground"
               />
               <Button 
                 className="absolute right-2 top-1/2 -translate-y-1/2"
-                variant="secondary"
+                variant="outline"
               >
-                🔍 Advanced Search
+                <Search className="w-4 h-4 mr-2" />
+                Advanced Search
               </Button>
             </div>
 
@@ -328,8 +331,8 @@ const Syndic8 = () => {
               {categories.map((category) => (
                 <Badge
                   key={category}
-                  variant="secondary"
-                  className="cursor-pointer hover:bg-primary hover:text-white transition-colors px-4 py-2"
+                  variant="outline"
+                  className="cursor-pointer bg-white text-foreground hover:bg-white/90 transition-colors px-4 py-2 border-white/50"
                 >
                   {category}
                 </Badge>
@@ -340,28 +343,26 @@ const Syndic8 = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-cta">
+      <section className="py-20 px-4 bg-muted/50">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
             Ready to Join the Future of Coaching?
           </h2>
-          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Be part of the revolutionary Syndic8 network and transform how coaching expertise is 
             shared and scaled globally.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button 
               size="lg" 
-              variant="secondary" 
-              className="bg-white text-primary hover:bg-white/90"
               onClick={() => navigate('/auth')}
             >
               🚀 Join as Partner
             </Button>
             <Button 
               size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white/10"
+              variant="outline"
+              onClick={() => navigate('/contact')}
             >
               📺 Request Demo
             </Button>
