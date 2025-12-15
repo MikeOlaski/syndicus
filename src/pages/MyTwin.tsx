@@ -28,6 +28,7 @@ interface AssetType {
   description: string;
   icon: LucideIcon;
   color: string;
+  disabled?: boolean;
 }
 
 const MyTwin = () => {
@@ -44,22 +45,23 @@ const MyTwin = () => {
   const { toast } = useToast();
 
   // Define all asset types - each type exists in its primary category
+  // Only voice_note and agent are currently functional
   const assetTypes: Record<string, AssetType> = {
-    youtube: { id: "youtube", label: "YouTube", description: "Add single videos, playlists, or entire channels", icon: Youtube, color: "text-red-500" },
-    website: { id: "website", label: "Website", description: "Capture content from single pages to full websites", icon: Globe, color: "text-blue-500" },
-    twitter: { id: "twitter", label: "X / Twitter", description: "Load all your tweets", icon: Twitter, color: "text-slate-700 dark:text-slate-300" },
-    podcast: { id: "podcast", label: "Podcast", description: "Add a single episode or an entire series", icon: Mic, color: "text-purple-500" },
-    instagram: { id: "instagram", label: "Instagram Account", description: "Connect your Instagram profile", icon: Instagram, color: "text-pink-500" },
-    pdf: { id: "pdf", label: "Upload PDF", description: "Upload PDF documents", icon: FileText, color: "text-blue-500" },
-    archive: { id: "archive", label: "Upload Archive", description: "Upload ZIP or other archive files", icon: Archive, color: "text-orange-500" },
-    book: { id: "book", label: "Upload Book", description: "Upload ebooks or book content", icon: BookOpen, color: "text-green-500" },
-    snippet: { id: "snippet", label: "Code Snippet", description: "Add code snippets or text snippets", icon: FileCode, color: "text-cyan-500" },
-    gdrive: { id: "gdrive", label: "Google Drive", description: "Connect your Google Drive", icon: HardDrive, color: "text-yellow-500" },
-    notes: { id: "notes", label: "Notes App", description: "Import from Notion, Evernote, etc.", icon: StickyNote, color: "text-amber-500" },
-    messaging: { id: "messaging", label: "Messaging App", description: "Import from Slack, Discord, etc.", icon: MessageSquare, color: "text-indigo-500" },
-    rag: { id: "rag", label: "Connect RAG (Supabase)", description: "Connect to a Supabase RAG system", icon: Database, color: "text-emerald-500" },
-    agent: { id: "agent", label: "Connect N8N Agent Workflow", description: "Connect to an n8n chat agent workflow", icon: Bot, color: "text-indigo-500" },
-    voice_note: { id: "voice_note", label: "Voice Note", description: "Transcribed voice recording", icon: AudioLines, color: "text-violet-500" },
+    voice_note: { id: "voice_note", label: "Voice Note", description: "Record and transcribe voice notes", icon: AudioLines, color: "text-violet-500", disabled: false },
+    agent: { id: "agent", label: "Connect N8N Agent Workflow", description: "Connect to an n8n chat agent workflow", icon: Bot, color: "text-indigo-500", disabled: false },
+    youtube: { id: "youtube", label: "YouTube", description: "Add single videos, playlists, or entire channels", icon: Youtube, color: "text-red-500", disabled: true },
+    website: { id: "website", label: "Website", description: "Capture content from single pages to full websites", icon: Globe, color: "text-blue-500", disabled: true },
+    twitter: { id: "twitter", label: "X / Twitter", description: "Load all your tweets", icon: Twitter, color: "text-slate-700 dark:text-slate-300", disabled: true },
+    podcast: { id: "podcast", label: "Podcast", description: "Add a single episode or an entire series", icon: Mic, color: "text-purple-500", disabled: true },
+    instagram: { id: "instagram", label: "Instagram Account", description: "Connect your Instagram profile", icon: Instagram, color: "text-pink-500", disabled: true },
+    pdf: { id: "pdf", label: "Upload PDF", description: "Upload PDF documents", icon: FileText, color: "text-blue-500", disabled: true },
+    archive: { id: "archive", label: "Upload Archive", description: "Upload ZIP or other archive files", icon: Archive, color: "text-orange-500", disabled: true },
+    book: { id: "book", label: "Upload Book", description: "Upload ebooks or book content", icon: BookOpen, color: "text-green-500", disabled: true },
+    snippet: { id: "snippet", label: "Code Snippet", description: "Add code snippets or text snippets", icon: FileCode, color: "text-cyan-500", disabled: true },
+    gdrive: { id: "gdrive", label: "Google Drive", description: "Connect your Google Drive", icon: HardDrive, color: "text-yellow-500", disabled: true },
+    notes: { id: "notes", label: "Notes App", description: "Import from Notion, Evernote, etc.", icon: StickyNote, color: "text-amber-500", disabled: true },
+    messaging: { id: "messaging", label: "Messaging App", description: "Import from Slack, Discord, etc.", icon: MessageSquare, color: "text-indigo-500", disabled: true },
+    rag: { id: "rag", label: "Connect RAG (Supabase)", description: "Connect to a Supabase RAG system", icon: Database, color: "text-emerald-500", disabled: true },
   };
 
   // Categories with their asset type IDs
@@ -67,7 +69,7 @@ const MyTwin = () => {
   const categoryConfig: Record<string, { label: string; typeIds: string[] }> = {
     popular: { 
       label: "Popular", 
-      typeIds: ["youtube", "website", "twitter", "podcast"] // These also exist in their own categories
+      typeIds: ["voice_note", "agent", "youtube", "website", "twitter", "podcast"] // Voice note and agent are functional
     },
     websites: { 
       label: "Websites", 
@@ -277,17 +279,45 @@ const MyTwin = () => {
   const AssetTypeRow = ({ type, showBorder = true }: { type: AssetType; showBorder?: boolean }) => (
     <Button
       variant="ghost"
-      className={`w-full h-auto p-4 flex items-center justify-between hover:bg-accent rounded-none ${showBorder ? 'border-b border-border' : ''}`}
-      onClick={() => handleSelectAssetType(type.id)}
+      className={`w-full h-auto p-4 flex items-center justify-between rounded-none ${showBorder ? 'border-b border-border' : ''} ${type.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent'}`}
+      onClick={() => !type.disabled && handleSelectAssetType(type.id)}
+      disabled={type.disabled}
     >
       <div className="flex items-center gap-3">
-        <type.icon className={`w-5 h-5 ${type.color}`} />
+        <type.icon className={`w-5 h-5 ${type.disabled ? 'text-muted-foreground' : type.color}`} />
         <div className="text-left">
-          <div className="font-medium text-sm">{type.label}</div>
+          <div className="font-medium text-sm flex items-center gap-2">
+            {type.label}
+            {type.disabled && <span className="text-xs text-muted-foreground">(Coming Soon)</span>}
+          </div>
           <div className="text-xs text-muted-foreground">{type.description}</div>
         </div>
       </div>
-      <Plus className="w-4 h-4 text-muted-foreground" />
+      <Plus className={`w-4 h-4 ${type.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'}`} />
+    </Button>
+  );
+
+
+  // Reusable button for modal asset type selection
+  const ModalAssetButton = ({ type }: { type: AssetType }) => (
+    <Button
+      key={type.id}
+      variant="outline"
+      className={`w-full h-auto p-4 flex items-start justify-between ${type.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent'}`}
+      onClick={() => !type.disabled && handleSelectAssetType(type.id)}
+      disabled={type.disabled}
+    >
+      <div className="flex items-start gap-3">
+        <type.icon className={`w-6 h-6 mt-1 ${type.disabled ? 'text-muted-foreground' : type.color}`} />
+        <div className="text-left">
+          <div className="font-medium flex items-center gap-2">
+            {type.label}
+            {type.disabled && <span className="text-xs text-muted-foreground">(Coming Soon)</span>}
+          </div>
+          <div className="text-sm text-muted-foreground">{type.description}</div>
+        </div>
+      </div>
+      <Plus className={`w-4 h-4 mt-1 ${type.disabled ? 'text-muted-foreground/50' : ''}`} />
     </Button>
   );
 
@@ -463,61 +493,19 @@ const MyTwin = () => {
                 
                 <TabsContent value="popular" className="space-y-2">
                   {getAssetTypesForCategory('popular').map((type) => (
-                    <Button
-                      key={type.id}
-                      variant="outline"
-                      className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                      onClick={() => setSelectedAssetType(type.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                        <div className="text-left">
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-sm text-muted-foreground">{type.description}</div>
-                        </div>
-                      </div>
-                      <Plus className="w-4 h-4 mt-1" />
-                    </Button>
+                    <ModalAssetButton key={type.id} type={type} />
                   ))}
                 </TabsContent>
 
                 <TabsContent value="socials" className="space-y-2">
                   {getAssetTypesForCategory('socials').map((type) => (
-                    <Button
-                      key={type.id}
-                      variant="outline"
-                      className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                      onClick={() => setSelectedAssetType(type.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                        <div className="text-left">
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-sm text-muted-foreground">{type.description}</div>
-                        </div>
-                      </div>
-                      <Plus className="w-4 h-4 mt-1" />
-                    </Button>
+                    <ModalAssetButton key={type.id} type={type} />
                   ))}
                 </TabsContent>
 
                 <TabsContent value="files" className="space-y-2">
                   {getAssetTypesForCategory('files').map((type) => (
-                    <Button
-                      key={type.id}
-                      variant="outline"
-                      className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                      onClick={() => setSelectedAssetType(type.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                        <div className="text-left">
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-sm text-muted-foreground">{type.description}</div>
-                        </div>
-                      </div>
-                      <Plus className="w-4 h-4 mt-1" />
-                    </Button>
+                    <ModalAssetButton key={type.id} type={type} />
                   ))}
                 </TabsContent>
 
@@ -526,61 +514,19 @@ const MyTwin = () => {
                     <div>
                       <h3 className="text-sm font-medium mb-2">Podcasts</h3>
                       {getAssetTypesForCategory('podcasts').map((type) => (
-                        <Button
-                          key={type.id}
-                          variant="outline"
-                          className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                          onClick={() => setSelectedAssetType(type.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                            <div className="text-left">
-                              <div className="font-medium">{type.label}</div>
-                              <div className="text-sm text-muted-foreground">{type.description}</div>
-                            </div>
-                          </div>
-                          <Plus className="w-4 h-4 mt-1" />
-                        </Button>
+                        <ModalAssetButton key={type.id} type={type} />
                       ))}
                     </div>
                     <div>
                       <h3 className="text-sm font-medium mb-2">Notes Apps</h3>
                       {getAssetTypesForCategory('notesApps').map((type) => (
-                        <Button
-                          key={type.id}
-                          variant="outline"
-                          className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                          onClick={() => setSelectedAssetType(type.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                            <div className="text-left">
-                              <div className="font-medium">{type.label}</div>
-                              <div className="text-sm text-muted-foreground">{type.description}</div>
-                            </div>
-                          </div>
-                          <Plus className="w-4 h-4 mt-1" />
-                        </Button>
+                        <ModalAssetButton key={type.id} type={type} />
                       ))}
                     </div>
                     <div>
                       <h3 className="text-sm font-medium mb-2">Messaging Apps</h3>
                       {getAssetTypesForCategory('messagingApps').map((type) => (
-                        <Button
-                          key={type.id}
-                          variant="outline"
-                          className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                          onClick={() => setSelectedAssetType(type.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                            <div className="text-left">
-                              <div className="font-medium">{type.label}</div>
-                              <div className="text-sm text-muted-foreground">{type.description}</div>
-                            </div>
-                          </div>
-                          <Plus className="w-4 h-4 mt-1" />
-                        </Button>
+                        <ModalAssetButton key={type.id} type={type} />
                       ))}
                     </div>
                   </div>
@@ -588,21 +534,7 @@ const MyTwin = () => {
 
                 <TabsContent value="advanced" className="space-y-2">
                   {getAssetTypesForCategory('advanced').map((type) => (
-                    <Button
-                      key={type.id}
-                      variant="outline"
-                      className="w-full h-auto p-4 flex items-start justify-between hover:bg-accent"
-                      onClick={() => setSelectedAssetType(type.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <type.icon className={`w-6 h-6 mt-1 ${type.color}`} />
-                        <div className="text-left">
-                          <div className="font-medium">{type.label}</div>
-                          <div className="text-sm text-muted-foreground">{type.description}</div>
-                        </div>
-                      </div>
-                      <Plus className="w-4 h-4 mt-1" />
-                    </Button>
+                    <ModalAssetButton key={type.id} type={type} />
                   ))}
                 </TabsContent>
               </Tabs>
