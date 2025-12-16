@@ -387,15 +387,20 @@ const AdminCoachDetail = () => {
                     <CardTitle>Profile Information</CardTitle>
                     <CardDescription>Manage the coach's public profile details</CardDescription>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => window.open(`/${coach.slug}`, '_blank')}
-                  >
-                    <Globe className="w-4 h-4" />
-                    View Public Profile
-                  </Button>
+                  <div className="flex flex-col items-end gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => window.open(`/${coach.slug}`, '_blank')}
+                    >
+                      <Globe className="w-4 h-4" />
+                      View Public Profile
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {window.location.origin}/{coach.slug}
+                    </span>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Avatar */}
