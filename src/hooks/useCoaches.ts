@@ -42,16 +42,14 @@ export const useCoaches = () => {
       >();
 
       if (userIds.length > 0) {
-        // Use public_coach_profiles view which has no RLS restrictions for public access
+        // Use security definer function to get public coach profile data safely
         const { data: profiles, error: profilesError } = await supabase
-          .from("public_coach_profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", userIds);
+          .rpc("get_public_coach_profiles", { coach_ids: userIds });
 
         if (profilesError) throw profilesError;
 
         profilesById = new Map(
-          (profiles ?? []).map((profile) => [profile.id!, profile])
+          (profiles ?? []).map((profile: { id: string; full_name: string | null; avatar_url: string | null }) => [profile.id, profile])
         );
       }
 

@@ -634,6 +634,14 @@ export type Database = {
       }
     }
     Functions: {
+      get_public_coach_profiles: {
+        Args: { coach_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
       get_subscription_limits: {
         Args: { user_tier: Database["public"]["Enums"]["subscriber_tier"] }
         Returns: Json
