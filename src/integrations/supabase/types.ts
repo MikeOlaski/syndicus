@@ -197,6 +197,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "coach_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "coach_sessions_subscriber_id_fkey"
             columns: ["subscriber_id"]
             isOneToOne: false
@@ -414,6 +421,13 @@ export type Database = {
             referencedRelation: "coach_profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "subscriptions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_directory"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       syndic8_group_members: {
@@ -546,6 +560,69 @@ export type Database = {
       }
     }
     Views: {
+      public_coach_directory: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          expertise: string[] | null
+          id: string | null
+          instagram_url: string | null
+          is_claimed: boolean | null
+          is_verified: boolean | null
+          linkedin_url: string | null
+          rating: number | null
+          show_on_homepage: boolean | null
+          slug: string | null
+          specialization: string | null
+          status: Database["public"]["Enums"]["coach_status"] | null
+          total_sessions: number | null
+          twitter_url: string | null
+          updated_at: string | null
+          user_id: string | null
+          website_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          expertise?: string[] | null
+          id?: string | null
+          instagram_url?: string | null
+          is_claimed?: boolean | null
+          is_verified?: boolean | null
+          linkedin_url?: string | null
+          rating?: number | null
+          show_on_homepage?: boolean | null
+          slug?: string | null
+          specialization?: string | null
+          status?: Database["public"]["Enums"]["coach_status"] | null
+          total_sessions?: number | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          expertise?: string[] | null
+          id?: string | null
+          instagram_url?: string | null
+          is_claimed?: boolean | null
+          is_verified?: boolean | null
+          linkedin_url?: string | null
+          rating?: number | null
+          show_on_homepage?: boolean | null
+          slug?: string | null
+          specialization?: string | null
+          status?: Database["public"]["Enums"]["coach_status"] | null
+          total_sessions?: number | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       public_coach_profiles: {
         Row: {
           avatar_url: string | null
