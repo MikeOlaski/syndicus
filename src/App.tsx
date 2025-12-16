@@ -19,6 +19,7 @@ import AdminCoachDetail from "./pages/AdminCoachDetail";
 import AdminSubscribers from "./pages/AdminSubscribers";
 import AdminWebhooks from "./pages/AdminWebhooks";
 import AdminTemplates from "./pages/AdminTemplates";
+import AdminConversations from "./pages/AdminConversations";
 import ChatPage from "./pages/ChatPage";
 import MyTwin from "./pages/MyTwin";
 import Conversations from "./pages/Conversations";
@@ -74,6 +75,7 @@ const App = () => (
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/admin-dashboard/coaches" element={<AdminCoaches />} />
           <Route path="/admin-dashboard/coaches/:coachId" element={<AdminCoachDetail />} />
+          <Route path="/admin-dashboard/conversations" element={<AdminConversations />} />
           <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
           <Route path="/admin-dashboard/templates" element={<AdminTemplates />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
