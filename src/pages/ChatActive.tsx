@@ -241,7 +241,7 @@ const ChatActive = () => {
       {/* Chat Input - Fixed at Bottom */}
       <div className="border-t bg-background">
         <div className="container mx-auto max-w-4xl px-4 py-4">
-          {coach.webhookUrl ? (
+          {coach.hasWebhook ? (
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <input
                 type="text"

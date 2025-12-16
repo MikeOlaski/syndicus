@@ -4,6 +4,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useGuestMessageLimit } from "@/hooks/useGuestMessageLimit";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 
+// Use edge function for secure webhook calls - webhook URL never exposed to client
+const COACH_WEBHOOK_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coach-webhook`;
+
 interface CoachData {
   id: string;
   profileId: string; // coach_profiles.id for session tracking
@@ -11,7 +14,7 @@ interface CoachData {
   name: string;
   specialization: string;
   image: string;
-  webhookUrl: string | null;
+  hasWebhook: boolean; // Only track if webhook exists, not the URL itself
   isClaimed: boolean;
   bio: string | null;
   personality: string | null;
@@ -230,7 +233,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         // First, try to find coach by slug
         const { data: coachProfile, error: coachError } = await supabase
           .from("coach_profiles")
-          .select("id, user_id, slug, specialization, personality, webhook_url, is_claimed, bio, expertise, hourly_rate, website_url, twitter_url, linkedin_url, instagram_url")
+          .select("id, user_id, slug, specialization, personality, is_claimed, bio, expertise, hourly_rate, website_url, twitter_url, linkedin_url, instagram_url")
           .eq("slug", coachSlug)
           .maybeSingle();
 
@@ -256,6 +259,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
 
         if (profileError) throw profileError;
 
+        // Check if webhook exists without exposing the URL (done via edge function)
         const coachData: CoachData = {
           id: resolvedCoachId,
           profileId: resolvedProfileId,
@@ -263,7 +267,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
           name: profile?.full_name || "Coach",
           specialization: coachProfile.specialization || "General Coaching",
           image: profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'Coach'}`,
-          webhookUrl: coachProfile.webhook_url,
+          hasWebhook: true, // Assume webhook exists - edge function will handle if not
           isClaimed: coachProfile.is_claimed || false,
           bio: coachProfile.bio,
           personality: coachProfile.personality,
@@ -361,7 +365,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
 
   const sendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || message;
-    if (!textToSend.trim() || isLoading || !coach?.webhookUrl) return;
+    if (!textToSend.trim() || isLoading || !coach?.hasWebhook || !coach?.profileId) return;
 
     // Check guest message limit before sending
     if (guestLimit.isGuest && !guestLimit.canSendMessage()) {
@@ -403,12 +407,14 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     }
 
     try {
-      const response = await fetch(coach.webhookUrl, {
+      // Use secure edge function to proxy webhook calls
+      const response = await fetch(COACH_WEBHOOK_FUNCTION_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          coachProfileId: coach.profileId,
           sessionId: sessionId,
           action: "sendMessage",
           chatInput: userMessage.content,
@@ -471,7 +477,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     } finally {
       setIsLoading(false);
     }
-  }, [message, isLoading, coach?.webhookUrl, coachId, sessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount]);
+  }, [message, isLoading, coach?.hasWebhook, coach?.profileId, coachId, sessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount]);
 
   return {
     message,

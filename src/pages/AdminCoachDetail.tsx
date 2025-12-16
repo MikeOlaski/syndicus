@@ -980,8 +980,8 @@ const AdminCoachDetail = () => {
         coachName={fullName || coach.profiles.full_name || "Coach"}
         coachBio={bio}
         coachAvatar={avatarUrl}
-        webhookUrl={webhookUrl}
-        coachId={coach.id}
+        coachProfileId={coach.id}
+        coachId={coach.user_id}
       />
     </DashboardLayout>
   );
