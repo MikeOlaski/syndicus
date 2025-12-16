@@ -398,7 +398,7 @@ const AdminCoachDetail = () => {
                       View Public Profile
                     </Button>
                     <span className="text-xs text-muted-foreground">
-                      {window.location.origin}/{coach.slug}
+                      https://syndic.us/{coach.slug}
                     </span>
                   </div>
                 </CardHeader>
