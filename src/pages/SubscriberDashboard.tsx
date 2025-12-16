@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const SubscriberDashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { status, isLoading, refetch } = useSubscriptionLimits();
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   // Check for subscription success and refresh status
   useEffect(() => {
@@ -26,6 +27,23 @@ const SubscriberDashboard = () => {
     };
     checkSubscription();
   }, [searchParams, refetch]);
+
+  const handleUpgrade = async (tier: "plus" | "prime") => {
+    setCheckoutLoading(tier);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { tier }
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to start checkout');
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
 
   const handleManageSubscription = async () => {
     try {
@@ -77,8 +95,8 @@ const SubscriberDashboard = () => {
                 </Button>
               )}
               {status?.tier !== "prime" && (
-                <Button size="sm" onClick={() => navigate("/pricing")}>
-                  <Crown className="w-4 h-4 mr-2" />
+                <Button size="sm" onClick={() => handleUpgrade(status?.tier === "free" ? "plus" : "prime")} disabled={!!checkoutLoading}>
+                  {checkoutLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
                   {status?.tier === "free" ? "Upgrade" : "Upgrade to Prime"}
                 </Button>
               )}
@@ -191,7 +209,8 @@ const SubscriberDashboard = () => {
                   <li>• Text only</li>
                 </ul>
                 {status?.tier === "free" && (
-                  <Button size="sm" className="mt-4 w-full" onClick={() => navigate("/pricing")}>
+                  <Button size="sm" className="mt-4 w-full" onClick={() => handleUpgrade("plus")} disabled={!!checkoutLoading}>
+                    {checkoutLoading === "plus" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                     Upgrade
                   </Button>
                 )}
@@ -204,7 +223,8 @@ const SubscriberDashboard = () => {
                   <li>• 2 Syndic8 groups (8 coaches)</li>
                   <li>• All modalities</li>
                 </ul>
-                <Button size="sm" className="mt-4 w-full" variant="outline" onClick={() => navigate("/pricing")}>
+                <Button size="sm" className="mt-4 w-full" variant="outline" onClick={() => handleUpgrade("prime")} disabled={!!checkoutLoading}>
+                  {checkoutLoading === "prime" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   Upgrade
                 </Button>
               </div>
