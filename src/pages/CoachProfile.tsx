@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2, Shield, Globe, Twitter, Linkedin, Instagram } from "lucide-react";
+import { Star, Users, Calendar, Phone, Mail, MessageCircle, Maximize2, Send, Loader2, Shield, Globe, Twitter, Linkedin, Instagram, Share2, Copy, Check, Facebook } from "lucide-react";
 import Header from "@/components/Header";
 import { useCoachChat } from "@/hooks/useCoachChat";
 import { useEffect, useRef, useState } from "react";
@@ -12,12 +12,20 @@ import { GuestMessageBanner } from "@/components/GuestMessageBanner";
 import { SubscriptionLimitModal } from "@/components/SubscriptionLimitModal";
 import { ClaimCoachModal } from "@/components/ClaimCoachModal";
 import { FormattedMessage } from "@/components/ui/formatted-message";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const CoachProfile = () => {
   const { coachSlug } = useParams();
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   
   const {
@@ -47,6 +55,44 @@ const CoachProfile = () => {
     if (!inputValue.trim() || isLoading) return;
     sendMessage(inputValue);
     setInputValue("");
+  };
+
+  const profileUrl = `https://syndic.us/${coachSlug}`;
+  
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(profileUrl);
+    setCopied(true);
+    toast.success("Link copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareTwitter = () => {
+    const text = `Check out ${displayCoach?.name || "this coach"}'s AI coaching assistant on Syndic.us!`;
+    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(profileUrl)}&text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const handleShareLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`, "_blank");
+  };
+
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(profileUrl)}`, "_blank");
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${displayCoach?.name || "Coach"} - Syndic.us`,
+          text: `Check out ${displayCoach?.name || "this coach"}'s AI coaching assistant!`,
+          url: profileUrl,
+        });
+      } catch (err) {
+        // User cancelled or error
+      }
+    } else {
+      handleCopyLink();
+    }
   };
 
   // Fallback static data for display when coach data isn't loaded
@@ -82,6 +128,40 @@ const CoachProfile = () => {
           {/* Left Sidebar - Coach Details */}
           <div className="bg-card border rounded-lg p-6 h-fit">
             <div className="text-center mb-6">
+              <div className="flex justify-end mb-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
+                      {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      {copied ? "Copied!" : "Copy Link"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShareTwitter} className="gap-2 cursor-pointer">
+                      <Twitter className="w-4 h-4" />
+                      Share on X
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShareLinkedIn} className="gap-2 cursor-pointer">
+                      <Linkedin className="w-4 h-4" />
+                      Share on LinkedIn
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleShareFacebook} className="gap-2 cursor-pointer">
+                      <Facebook className="w-4 h-4" />
+                      Share on Facebook
+                    </DropdownMenuItem>
+                    {"share" in navigator && (
+                      <DropdownMenuItem onClick={handleNativeShare} className="gap-2 cursor-pointer">
+                        <Share2 className="w-4 h-4" />
+                        More options...
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <img
                 src={displayCoach.image}
                 alt={displayCoach.name}
