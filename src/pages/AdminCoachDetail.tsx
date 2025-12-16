@@ -382,9 +382,20 @@ const AdminCoachDetail = () => {
             {/* Profile Section */}
             {activeSection === "profile" && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Profile Information</CardTitle>
-                  <CardDescription>Manage the coach's public profile details</CardDescription>
+                <CardHeader className="flex flex-row items-start justify-between">
+                  <div>
+                    <CardTitle>Profile Information</CardTitle>
+                    <CardDescription>Manage the coach's public profile details</CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => window.open(`/${coach.slug}`, '_blank')}
+                  >
+                    <Globe className="w-4 h-4" />
+                    View Public Profile
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Avatar */}
