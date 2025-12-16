@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -10,6 +11,8 @@ import Header from "@/components/Header";
 type UserRole = "subscriber" | "coach" | null;
 
 const Auth = () => {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") === "signup" ? "signup" : "login";
   const [signupRole, setSignupRole] = useState<UserRole>(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
@@ -39,7 +42,7 @@ const Auth = () => {
             {showForgotPassword ? (
               <ForgotPasswordForm onBackToLogin={() => setShowForgotPassword(false)} />
             ) : (
-              <Tabs defaultValue="login" className="w-full">
+              <Tabs defaultValue={initialTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="login">Login</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
