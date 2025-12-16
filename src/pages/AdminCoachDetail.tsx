@@ -16,9 +16,11 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Loader2, X, Save, Camera, Upload, ArrowLeft, User, Settings, Bot, 
   MessageSquare, FileText, Users, Globe, Shield, BarChart3, Link2,
-  CheckCircle, XCircle, Eye, EyeOff
+  CheckCircle, XCircle, Eye, EyeOff, Clock
 } from "lucide-react";
 import { CoachChatModal } from "@/components/CoachChatModal";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow, format } from "date-fns";
 
 interface Coach {
   id: string;
@@ -50,7 +52,7 @@ interface Coach {
   subscriber_count?: number;
 }
 
-type MenuSection = "profile" | "settings" | "integrations" | "knowledge" | "analytics" | "security";
+type MenuSection = "profile" | "settings" | "integrations" | "knowledge" | "conversations" | "analytics" | "security";
 
 const STATUS_OPTIONS = [
   { value: "admin_setup", label: "Admin Setup" },
@@ -67,6 +69,7 @@ const MENU_ITEMS = [
   { id: "settings" as MenuSection, label: "Settings", icon: Settings, description: "Status, rates, verification" },
   { id: "integrations" as MenuSection, label: "Integrations", icon: Bot, description: "Webhooks, n8n, external tools" },
   { id: "knowledge" as MenuSection, label: "Knowledge Base", icon: FileText, description: "Digital twin assets" },
+  { id: "conversations" as MenuSection, label: "Conversations", icon: MessageSquare, description: "Chat sessions, history" },
   { id: "analytics" as MenuSection, label: "Analytics", icon: BarChart3, description: "Stats, subscribers, sessions" },
   { id: "security" as MenuSection, label: "Security", icon: Shield, description: "Access, permissions, audit" },
 ];
@@ -80,6 +83,227 @@ const MISSING_FEATURES = [
   { section: "Analytics", features: ["Message analytics", "Response time metrics", "Subscriber growth chart", "Revenue tracking"] },
   { section: "Security", features: ["Password reset for coach", "Session management", "API key management", "Audit log viewer"] },
 ];
+
+// Conversations Section Component
+interface ConversationSession {
+  id: string;
+  subscriber_id: string | null;
+  guest_session_id: string | null;
+  started_at: string;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  message_count: number;
+  session_type: string;
+  subscriber?: {
+    full_name: string | null;
+    email: string;
+    avatar_url: string | null;
+  } | null;
+}
+
+const CoachConversationsSection = ({ coachId, coachName }: { coachId: string; coachName: string }) => {
+  const [sessions, setSessions] = useState<ConversationSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<ConversationSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, active: 0, messages: 0, avgDuration: 0 });
+
+  useEffect(() => {
+    fetchSessions();
+  }, [coachId]);
+
+  const fetchSessions = async () => {
+    try {
+      const { data: sessionsData, error } = await supabase
+        .from("coach_sessions")
+        .select("*")
+        .eq("coach_id", coachId)
+        .order("started_at", { ascending: false });
+
+      if (error) throw error;
+
+      const subscriberIds = sessionsData?.filter(s => s.subscriber_id).map(s => s.subscriber_id) || [];
+      let subscriberMap: Record<string, any> = {};
+      
+      if (subscriberIds.length > 0) {
+        const { data: subscribers } = await supabase
+          .from("profiles")
+          .select("id, full_name, email, avatar_url")
+          .in("id", subscriberIds);
+        if (subscribers) {
+          subscriberMap = subscribers.reduce((acc, sub) => ({ ...acc, [sub.id]: sub }), {});
+        }
+      }
+
+      const enriched = (sessionsData || []).map(s => ({
+        ...s,
+        subscriber: s.subscriber_id ? subscriberMap[s.subscriber_id] : null
+      }));
+
+      setSessions(enriched);
+
+      const total = enriched.length;
+      const active = enriched.filter(s => !s.ended_at).length;
+      const messages = enriched.reduce((sum, s) => sum + (s.message_count || 0), 0);
+      const completed = enriched.filter(s => s.duration_seconds);
+      const avgDuration = completed.length > 0
+        ? Math.round(completed.reduce((sum, s) => sum + (s.duration_seconds || 0), 0) / completed.length)
+        : 0;
+
+      setStats({ total, active, messages, avgDuration });
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return "In progress";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins === 0 ? `${secs}s` : `${mins}m ${secs}s`;
+  };
+
+  const getSessionTitle = (session: ConversationSession) => {
+    if (session.subscriber?.full_name) return session.subscriber.full_name;
+    if (session.subscriber?.email) return session.subscriber.email;
+    if (session.guest_session_id) return `Guest (${session.guest_session_id.slice(0, 8)}...)`;
+    return "Anonymous Session";
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Conversations</CardTitle>
+        <CardDescription>Chat sessions with {coachName}'s Digital Twin</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-xl font-bold">{stats.total}</div>
+            <div className="text-xs text-muted-foreground">Total</div>
+          </div>
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-xl font-bold text-green-500">{stats.active}</div>
+            <div className="text-xs text-muted-foreground">Active</div>
+          </div>
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-xl font-bold">{stats.messages}</div>
+            <div className="text-xs text-muted-foreground">Messages</div>
+          </div>
+          <div className="text-center p-3 bg-muted/30 rounded-lg">
+            <div className="text-xl font-bold">{formatDuration(stats.avgDuration)}</div>
+            <div className="text-xs text-muted-foreground">Avg Duration</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Sessions List */}
+          <div className="border rounded-lg">
+            <div className="p-3 border-b">
+              <h4 className="font-medium text-sm">Sessions ({sessions.length})</h4>
+            </div>
+            <ScrollArea className="h-[300px]">
+              {isLoading ? (
+                <div className="p-4 text-center text-muted-foreground text-sm">Loading...</div>
+              ) : sessions.length === 0 ? (
+                <div className="p-6 text-center">
+                  <MessageSquare className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No sessions yet</p>
+                </div>
+              ) : (
+                <div className="p-2 space-y-1">
+                  {sessions.map(session => (
+                    <div
+                      key={session.id}
+                      onClick={() => setSelectedSession(session)}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        selectedSession?.id === session.id ? "bg-accent" : "hover:bg-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {session.subscriber_id ? (
+                            <User className="w-4 h-4 text-primary shrink-0" />
+                          ) : (
+                            <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                          )}
+                          <span className="font-medium text-sm truncate">{getSessionTitle(session)}</span>
+                        </div>
+                        {!session.ended_at && <Badge variant="secondary" className="text-xs">Active</Badge>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {formatDistanceToNow(new Date(session.started_at), { addSuffix: true })}
+                        <span>•</span>
+                        <span>{session.message_count} msgs</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+
+          {/* Session Details */}
+          <div className="border rounded-lg">
+            <div className="p-3 border-b">
+              <h4 className="font-medium text-sm">Session Details</h4>
+            </div>
+            <div className="p-4">
+              {selectedSession ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Started</p>
+                      <p className="text-sm font-medium">{format(new Date(selectedSession.started_at), "MMM d, h:mm a")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Status</p>
+                      <Badge variant={selectedSession.ended_at ? "secondary" : "default"} className="text-xs">
+                        {selectedSession.ended_at ? "Completed" : "Active"}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Duration</p>
+                      <p className="text-sm font-medium">{formatDuration(selectedSession.duration_seconds)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Messages</p>
+                      <p className="text-sm font-medium">{selectedSession.message_count}</p>
+                    </div>
+                  </div>
+                  <div className="border-t pt-3">
+                    <p className="text-xs text-muted-foreground mb-2">User</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{getSessionTitle(selectedSession)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedSession.subscriber_id ? "Registered" : "Guest"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Select a session</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const AdminCoachDetail = () => {
   const { coachId } = useParams();
@@ -631,6 +855,11 @@ const AdminCoachDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Conversations Section */}
+            {activeSection === "conversations" && (
+              <CoachConversationsSection coachId={coach.id} coachName={fullName || coach.profiles.full_name || "Coach"} />
             )}
 
             {/* Analytics Section */}
