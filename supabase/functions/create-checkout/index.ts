@@ -10,12 +10,10 @@ const corsHeaders = {
 // Product and Price IDs from Stripe
 const TIERS = {
   plus: {
-    priceId: "price_1RQVMjCd2SiGtl1ow6Q1lL4Z", // $27/month
-    productId: "prod_TON5XJr9Ttli2H",
+    priceId: "price_1SRaKrJiWk2nGbGtGHTHMsrF", // $7/month
   },
   prime: {
-    priceId: "price_1RQVNpCd2SiGtl1o2fA3SH0t", // $97/month
-    productId: "prod_TON5LYvA3StnNj",
+    priceId: "price_1SRaLNJiWk2nGbGtxgOUND2b", // $27/month
   },
 };
 
