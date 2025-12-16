@@ -8,6 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Loader2, Bot, User } from "lucide-react";
 import { FormattedMessage } from "@/components/ui/formatted-message";
 
+// Use edge function for secure webhook calls
+const COACH_WEBHOOK_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/coach-webhook`;
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -20,8 +23,8 @@ interface CoachChatModalProps {
   coachName: string;
   coachBio: string | null;
   coachAvatar: string | null;
-  webhookUrl: string;
-  coachId: string;
+  coachProfileId: string; // coach_profiles.id - used for secure webhook proxy
+  coachId: string; // user_id - used for session storage key
 }
 
 export const CoachChatModal = ({
@@ -30,7 +33,7 @@ export const CoachChatModal = ({
   coachName,
   coachBio,
   coachAvatar,
-  webhookUrl,
+  coachProfileId,
   coachId,
 }: CoachChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -88,12 +91,14 @@ export const CoachChatModal = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch(webhookUrl, {
+      // Use secure edge function to proxy webhook calls
+      const response = await fetch(COACH_WEBHOOK_FUNCTION_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          coachProfileId: coachProfileId,
           sessionId: sessionId,
           action: "sendMessage",
           chatInput: userMessage.content,

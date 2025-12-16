@@ -476,7 +476,7 @@ export const CoachManualAddModal = ({ open, onOpenChange, onSuccess }: CoachManu
           coachName={fullName || "Coach"}
           coachBio={bio}
           coachAvatar={null}
-          webhookUrl={webhookUrl}
+          coachProfileId={createdCoachId}
           coachId={createdCoachId}
         />
       )}

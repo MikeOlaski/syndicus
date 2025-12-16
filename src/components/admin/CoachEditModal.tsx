@@ -503,8 +503,8 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
       coachName={fullName || coach.profiles.full_name || "Coach"}
       coachBio={bio}
       coachAvatar={avatarUrl}
-      webhookUrl={webhookUrl}
-      coachId={coach.id}
+      coachProfileId={coach.id}
+      coachId={coach.user_id}
     />
   </>
   );

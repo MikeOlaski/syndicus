@@ -416,7 +416,7 @@ const CoachProfile = () => {
 
             {/* Chat Input */}
             <div className="border-t p-4">
-              {coach?.webhookUrl ? (
+              {coach?.hasWebhook ? (
                 <form onSubmit={handleSubmit} className="flex gap-2">
                   <input
                     type="text"
