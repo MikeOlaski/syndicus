@@ -11,7 +11,8 @@ import {
   MessagesSquare,
   Home,
   Webhook,
-  FileText
+  FileText,
+  Zap
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +48,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
   const subscriberItems = [
     { title: "Dashboard", url: "/subscriber-dashboard", icon: LayoutDashboard },
     { title: "My Coaches", url: "/subscriber-dashboard/coaches", icon: Users },
+    { title: "My Syndic8s", url: "/subscriber-dashboard/syndic8s", icon: Zap },
     { title: "AI Chat", url: "/subscriber-dashboard/chat", icon: MessageSquare },
     { title: "Profile", url: "/subscriber-dashboard/profile", icon: User },
   ];
