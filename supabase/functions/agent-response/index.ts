@@ -82,18 +82,21 @@ serve(async (req) => {
     let user: { id: string } | null = null;
 
     // Validate API key if provided (for n8n webhooks)
+    // SECURITY: Only accept service role key for privileged operations
+    // The anon key is publicly known and should NOT be accepted here
     if (apiKeyHeader) {
-      // Verify API key matches the anon key or service role key
-      if (apiKeyHeader === supabaseAnonKey || apiKeyHeader === supabaseServiceRoleKey) {
+      // Only accept service role key - never accept anon key for privileged operations
+      if (apiKeyHeader === supabaseServiceRoleKey) {
         isApiKeyAuth = true;
-        console.log("Authenticated via API key");
+        console.log("Authenticated via service role key");
       } else {
+        console.warn("Rejected authentication attempt with invalid API key");
         return new Response(
-          JSON.stringify({ error: "Invalid API key" }),
+          JSON.stringify({ error: "Invalid API key - service role key required" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-    } 
+    }
     // Validate JWT if provided (for browser/app calls)
     else if (authHeader) {
       const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
