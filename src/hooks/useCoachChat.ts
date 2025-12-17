@@ -250,14 +250,15 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         setCoachId(resolvedCoachId);
         setCoachProfileId(resolvedProfileId);
 
-        // Fetch user profile
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("full_name, avatar_url")
-          .eq("id", resolvedCoachId)
-          .maybeSingle();
+        // Fetch user profile using secure RPC function (works for anonymous users)
+        const { data: profiles, error: profileError } = await supabase
+          .rpc("get_public_coach_profiles", { coach_ids: [resolvedCoachId] });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Error fetching public coach profile:", profileError);
+        }
+        
+        const profile = profiles && profiles.length > 0 ? profiles[0] : null;
 
         // Check if webhook exists without exposing the URL (done via edge function)
         const coachData: CoachData = {
