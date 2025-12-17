@@ -486,6 +486,19 @@ const AdminCoachDetail = () => {
         .from("coach_profiles")
         .update(updateData)
         .eq("id", coach.id);
+
+      // Trigger webhook for coach updated
+      console.log(`[AdminCoachDetail] Triggering webhook: coach.updated for coach: ${coach.id}`);
+      supabase.functions.invoke("send-coach-webhook", {
+        body: { event: "coach.updated", coachId: coach.id },
+      }).then(({ error: webhookError }) => {
+        if (webhookError) {
+          console.error("[AdminCoachDetail] Webhook error:", webhookError);
+        } else {
+          console.log("[AdminCoachDetail] Webhook coach.updated sent successfully");
+        }
+      });
+
       toast({ title: "Success", description: "Coach profile saved successfully" });
       fetchCoach();
     } catch (error: any) {

@@ -232,6 +232,18 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
 
       if (coachError) throw coachError;
 
+      // Trigger webhook for coach updated
+      console.log(`[CoachEditModal] Triggering webhook: coach.updated for coach: ${coach.id}`);
+      supabase.functions.invoke("send-coach-webhook", {
+        body: { event: "coach.updated", coachId: coach.id },
+      }).then(({ error: webhookError }) => {
+        if (webhookError) {
+          console.error("[CoachEditModal] Webhook error:", webhookError);
+        } else {
+          console.log("[CoachEditModal] Webhook coach.updated sent successfully");
+        }
+      });
+
       toast({
         title: "Success",
         description: "Coach profile updated successfully",
