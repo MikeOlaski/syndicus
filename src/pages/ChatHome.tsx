@@ -36,14 +36,15 @@ const ChatHome = () => {
         if (coachError) throw coachError;
 
         if (coachProfile) {
-          // Fetch user profile
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("full_name, avatar_url")
-            .eq("id", coachProfile.user_id)
-            .maybeSingle();
+          // Fetch user profile using secure RPC function (works for anonymous users)
+          const { data: profiles, error: profileError } = await supabase
+            .rpc("get_public_coach_profiles", { coach_ids: [coachProfile.user_id] });
 
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error("Error fetching public coach profile:", profileError);
+          }
+          
+          const profile = profiles && profiles.length > 0 ? profiles[0] : null;
 
           setCoach({
             id: coachProfile.user_id,
