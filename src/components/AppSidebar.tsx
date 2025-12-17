@@ -12,7 +12,8 @@ import {
   Home,
   Webhook,
   FileText,
-  Zap
+  Zap,
+  Key
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +72,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     { title: "Manage Subscribers", url: "/admin-dashboard/subscribers", icon: Users },
     { title: "System Chat", url: "/admin-dashboard/chat", icon: MessageSquare },
     { title: "Webhook Endpoints", url: "/admin-dashboard/webhooks", icon: Webhook },
+    { title: "API Keys", url: "/admin-dashboard/api-keys", icon: Key },
   ];
 
   const items = 
