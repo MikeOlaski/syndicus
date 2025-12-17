@@ -342,6 +342,48 @@ export type Database = {
         }
         Relationships: []
       }
+      outbound_webhooks: {
+        Row: {
+          created_at: string
+          description: string | null
+          events: string[]
+          id: string
+          is_active: boolean
+          last_response_status: number | null
+          last_triggered_at: string | null
+          name: string
+          secret_key: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_response_status?: number | null
+          last_triggered_at?: string | null
+          name: string
+          secret_key?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_response_status?: number | null
+          last_triggered_at?: string | null
+          name?: string
+          secret_key?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -593,6 +635,47 @@ export type Database = {
           url?: string
         }
         Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
