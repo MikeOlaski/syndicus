@@ -263,6 +263,20 @@ const AdminCoaches = () => {
           .eq("id", coachId);
       }
 
+      // Trigger webhook for coach published/unpublished
+      const webhookEvent = newStatus ? "coach.published" : "coach.unpublished";
+      console.log(`[AdminCoaches] Triggering webhook: ${webhookEvent} for coach: ${coachId}`);
+      
+      supabase.functions.invoke("send-coach-webhook", {
+        body: { event: webhookEvent, coachId },
+      }).then(({ error: webhookError }) => {
+        if (webhookError) {
+          console.error("[AdminCoaches] Webhook error:", webhookError);
+        } else {
+          console.log(`[AdminCoaches] Webhook ${webhookEvent} sent successfully`);
+        }
+      });
+
       toast({
         title: "Success",
         description: `Coach ${newStatus ? "verified" : "unverified"} successfully`,
@@ -315,6 +329,19 @@ const AdminCoaches = () => {
           action_type: newStatus ? "show_on_homepage" : "hide_from_homepage",
           details: { coach_profile_id: coachId, new_status: newStatus },
         });
+
+      // Trigger webhook for coach updated
+      console.log(`[AdminCoaches] Triggering webhook: coach.updated for coach: ${coachId}`);
+      
+      supabase.functions.invoke("send-coach-webhook", {
+        body: { event: "coach.updated", coachId },
+      }).then(({ error: webhookError }) => {
+        if (webhookError) {
+          console.error("[AdminCoaches] Webhook error:", webhookError);
+        } else {
+          console.log("[AdminCoaches] Webhook coach.updated sent successfully");
+        }
+      });
 
       toast({
         title: "Success",
