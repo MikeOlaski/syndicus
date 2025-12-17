@@ -153,6 +153,7 @@ serve(async (req) => {
     let webhookData;
     try {
       webhookData = await webhookResponse.json();
+      console.log("Webhook response data:", JSON.stringify(webhookData));
     } catch (e) {
       console.error("Failed to parse webhook response:", e);
       return new Response(
@@ -161,8 +162,22 @@ serve(async (req) => {
       );
     }
 
-    // Extract the response content
-    const responseContent = webhookData.response || webhookData.message || webhookData.content || "No response";
+    // Extract the response content - check multiple possible field names
+    const responseContent = 
+      webhookData.response || 
+      webhookData.message || 
+      webhookData.content || 
+      webhookData.output || 
+      webhookData.text || 
+      webhookData.reply ||
+      webhookData.answer ||
+      webhookData.result ||
+      (webhookData.data?.response) ||
+      (webhookData.data?.message) ||
+      (webhookData.data?.output) ||
+      "No response";
+    
+    console.log("Extracted response content:", responseContent);
 
     console.log(`External chat success for ${apiKeyData.name} -> ${coach.slug}`);
 
