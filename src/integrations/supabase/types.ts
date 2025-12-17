@@ -273,6 +273,42 @@ export type Database = {
         }
         Relationships: []
       }
+      external_api_keys: {
+        Row: {
+          allowed_origins: string[] | null
+          api_key: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          name: string
+          permissions: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_origins?: string[] | null
+          api_key: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name: string
+          permissions?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_origins?: string[] | null
+          api_key?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string
+          permissions?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       knowledge_base: {
         Row: {
           coach_id: string
