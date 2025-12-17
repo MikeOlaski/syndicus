@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.transcribe-voice]
 verify_jwt = true
+
+[functions.coaches-api]
+verify_jwt = false
+
+[functions.external-chat]
+verify_jwt = false
