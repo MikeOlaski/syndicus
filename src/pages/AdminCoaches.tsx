@@ -756,7 +756,10 @@ const AdminCoaches = () => {
             {paginatedCoaches.map((coach) => (
               <Card key={coach.id} className="p-6 hover:shadow-lg transition-shadow relative">
                 {/* Homepage Toggle */}
-                <div className="absolute top-3 right-3 flex items-center gap-2">
+                <div 
+                  className="absolute top-3 right-3 flex items-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Globe className={`w-4 h-4 ${coach.show_on_homepage ? 'text-primary' : 'text-muted-foreground'}`} />
                   <Switch
                     checked={coach.show_on_homepage || false}
