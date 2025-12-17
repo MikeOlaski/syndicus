@@ -19,8 +19,10 @@ import {
   Copy,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  FileCode
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -78,6 +80,7 @@ const AdminOutboundWebhooks = () => {
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [isApiDocsModalOpen, setIsApiDocsModalOpen] = useState(false);
   const [selectedWebhookId, setSelectedWebhookId] = useState<string | null>(null);
 
   // New webhook form state
@@ -270,73 +273,80 @@ const AdminOutboundWebhooks = () => {
             </p>
           </div>
           
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Webhook
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Outbound Webhook</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={newWebhook.name}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
-                    placeholder="e.g., Rehabit.biz Sync"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description (optional)</Label>
-                  <Input
-                    id="description"
-                    value={newWebhook.description}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, description: e.target.value })}
-                    placeholder="Syncs coach data to external site"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="url">Webhook URL</Label>
-                  <Input
-                    id="url"
-                    type="url"
-                    value={newWebhook.url}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
-                    placeholder="https://your-site.com/api/coach-webhook"
-                  />
-                </div>
-                <div>
-                  <Label>Events</Label>
-                  <div className="space-y-2 mt-2">
-                    {EVENT_OPTIONS.map((event) => (
-                      <div key={event.value} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={event.value}
-                          checked={newWebhook.events.includes(event.value)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setNewWebhook({ ...newWebhook, events: [...newWebhook.events, event.value] });
-                            } else {
-                              setNewWebhook({ ...newWebhook, events: newWebhook.events.filter(e => e !== event.value) });
-                            }
-                          }}
-                        />
-                        <Label htmlFor={event.value} className="font-normal">{event.label}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <Button onClick={handleAddWebhook} className="w-full">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsApiDocsModalOpen(true)}>
+              <FileCode className="w-4 h-4 mr-2" />
+              API Docs
+            </Button>
+            
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
                   Add Webhook
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Outbound Webhook</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      value={newWebhook.name}
+                      onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
+                      placeholder="e.g., Rehabit.biz Sync"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description (optional)</Label>
+                    <Input
+                      id="description"
+                      value={newWebhook.description}
+                      onChange={(e) => setNewWebhook({ ...newWebhook, description: e.target.value })}
+                      placeholder="Syncs coach data to external site"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="url">Webhook URL</Label>
+                    <Input
+                      id="url"
+                      type="url"
+                      value={newWebhook.url}
+                      onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
+                      placeholder="https://your-site.com/api/coach-webhook"
+                    />
+                  </div>
+                  <div>
+                    <Label>Events</Label>
+                    <div className="space-y-2 mt-2">
+                      {EVENT_OPTIONS.map((event) => (
+                        <div key={event.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={event.value}
+                            checked={newWebhook.events.includes(event.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setNewWebhook({ ...newWebhook, events: [...newWebhook.events, event.value] });
+                              } else {
+                                setNewWebhook({ ...newWebhook, events: newWebhook.events.filter(e => e !== event.value) });
+                              }
+                            }}
+                          />
+                          <Label htmlFor={event.value} className="font-normal">{event.label}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Button onClick={handleAddWebhook} className="w-full">
+                    Add Webhook
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {loading ? (
@@ -573,6 +583,123 @@ const AdminOutboundWebhooks = () => {
                 </Table>
               )}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* API Docs Modal */}
+        <Dialog open={isApiDocsModalOpen} onOpenChange={setIsApiDocsModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileCode className="w-5 h-5" />
+                Webhook API Documentation
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[70vh] pr-4">
+              <div className="space-y-6 mt-4">
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Overview</h3>
+                  <p className="text-sm text-muted-foreground">
+                    When coach events occur, we send a POST request to your configured webhook URL with the following payload format.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Headers</h3>
+                  <div className="bg-muted p-4 rounded-lg font-mono text-sm">
+                    <div>Content-Type: application/json</div>
+                    <div>X-Webhook-Secret: &lt;your_secret_key&gt;</div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Verify the X-Webhook-Secret header matches your Secret Key to authenticate requests.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Request Body</h3>
+                  <div className="bg-muted p-4 rounded-lg overflow-x-auto">
+                    <pre className="font-mono text-sm whitespace-pre">{`{
+  "event": "coach.published" | "coach.updated" | "coach.unpublished",
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "coach": {
+    "id": "uuid",
+    "slug": "john-doe",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "specialization": "Life Coach",
+    "avatar_url": "https://...",
+    "bio": "Coach biography text...",
+    "expertise": ["Leadership", "Career"],
+    "rating": 4.8,
+    "total_sessions": 150,
+    "website_url": "https://...",
+    "linkedin_url": "https://...",
+    "twitter_url": "https://...",
+    "instagram_url": "https://..."
+  }
+}`}</pre>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Events</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-3">
+                      <Badge>coach.published</Badge>
+                      <span className="text-sm text-muted-foreground">Sent when a coach profile is verified and made public.</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Badge>coach.updated</Badge>
+                      <span className="text-sm text-muted-foreground">Sent when a coach's profile information is updated.</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Badge>coach.unpublished</Badge>
+                      <span className="text-sm text-muted-foreground">Sent when a coach profile is deactivated or hidden.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Expected Response</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Your endpoint should return a 2xx status code to acknowledge receipt. We log all responses for debugging.
+                  </p>
+                  <div className="bg-muted p-4 rounded-lg font-mono text-sm">
+                    <div>HTTP/1.1 200 OK</div>
+                    <div>{"{ \"success\": true }"}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Example (Node.js/Express)</h3>
+                  <div className="bg-muted p-4 rounded-lg overflow-x-auto">
+                    <pre className="font-mono text-sm whitespace-pre">{`app.post('/api/coach-webhook', (req, res) => {
+  const secret = req.headers['x-webhook-secret'];
+  
+  if (secret !== process.env.SYNDICUS_API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const { event, coach, timestamp } = req.body;
+  
+  switch (event) {
+    case 'coach.published':
+      // Add coach to your database
+      break;
+    case 'coach.updated':
+      // Update coach in your database
+      break;
+    case 'coach.unpublished':
+      // Remove or deactivate coach
+      break;
+  }
+  
+  res.json({ success: true });
+});`}</pre>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
