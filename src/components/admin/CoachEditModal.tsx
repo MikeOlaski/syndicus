@@ -26,6 +26,7 @@ interface Coach {
   personality: string | null;
   status: string;
   webhook_url?: string | null;
+  show_on_homepage?: boolean | null;
   profiles: {
     full_name: string | null;
     email: string;
@@ -232,17 +233,19 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
 
       if (coachError) throw coachError;
 
-      // Trigger webhook for coach updated
-      console.log(`[CoachEditModal] Triggering webhook: coach.updated for coach: ${coach.id}`);
-      supabase.functions.invoke("send-coach-webhook", {
-        body: { event: "coach.updated", coachId: coach.id },
-      }).then(({ error: webhookError }) => {
-        if (webhookError) {
-          console.error("[CoachEditModal] Webhook error:", webhookError);
-        } else {
-          console.log("[CoachEditModal] Webhook coach.updated sent successfully");
-        }
-      });
+      // Only trigger webhook if coach is verified AND published (show_on_homepage)
+      if (coach.is_verified && coach.show_on_homepage) {
+        console.log(`[CoachEditModal] Triggering webhook: coach.updated for coach: ${coach.id}`);
+        supabase.functions.invoke("send-coach-webhook", {
+          body: { event: "coach.updated", coachId: coach.id },
+        }).then(({ error: webhookError }) => {
+          if (webhookError) {
+            console.error("[CoachEditModal] Webhook error:", webhookError);
+          } else {
+            console.log("[CoachEditModal] Webhook coach.updated sent successfully");
+          }
+        });
+      }
 
       toast({
         title: "Success",
