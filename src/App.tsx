@@ -18,6 +18,7 @@ import AdminCoaches from "./pages/AdminCoaches";
 import AdminCoachDetail from "./pages/AdminCoachDetail";
 import AdminSubscribers from "./pages/AdminSubscribers";
 import AdminWebhooks from "./pages/AdminWebhooks";
+import AdminOutboundWebhooks from "./pages/AdminOutboundWebhooks";
 import AdminTemplates from "./pages/AdminTemplates";
 import AdminConversations from "./pages/AdminConversations";
 import AdminAPIKeys from "./pages/AdminAPIKeys";
@@ -80,6 +81,7 @@ const App = () => (
           <Route path="/admin-dashboard/subscribers" element={<AdminSubscribers />} />
           <Route path="/admin-dashboard/templates" element={<AdminTemplates />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
+          <Route path="/admin-dashboard/outbound-webhooks" element={<AdminOutboundWebhooks />} />
           <Route path="/admin-dashboard/api-keys" element={<AdminAPIKeys />} />
           <Route path="/admin-dashboard/chat" element={<ChatPage role="admin" />} />
           <Route path="/how-it-works" element={<HowItWorks />} />

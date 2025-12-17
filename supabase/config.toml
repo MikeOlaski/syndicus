@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.external-chat]
 verify_jwt = false
+
+[functions.send-coach-webhook]
+verify_jwt = true
