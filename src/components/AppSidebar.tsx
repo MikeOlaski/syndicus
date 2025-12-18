@@ -13,7 +13,6 @@ import {
   Webhook,
   FileText,
   Zap,
-  Key,
   Send
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -74,7 +73,6 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     { title: "System Chat", url: "/admin-dashboard/chat", icon: MessageSquare },
     { title: "Webhook Endpoints", url: "/admin-dashboard/webhooks", icon: Webhook },
     { title: "Outbound Webhooks", url: "/admin-dashboard/outbound-webhooks", icon: Send },
-    { title: "API Keys", url: "/admin-dashboard/api-keys", icon: Key },
   ];
 
   const items = 
