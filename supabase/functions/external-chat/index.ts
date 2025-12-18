@@ -77,7 +77,7 @@ serve(async (req) => {
       // Try to validate against outbound_webhooks secret_key
       const { data: webhookData, error: webhookError } = await supabase
         .from("outbound_webhooks")
-        .select("id, name, secret_key, is_active, expires_at")
+        .select("id, name, secret_key, is_active, expires_at, chat_enabled")
         .eq("secret_key", apiKey)
         .single();
 
@@ -86,6 +86,14 @@ serve(async (req) => {
         if (!webhookData.is_active) {
           return new Response(
             JSON.stringify({ error: "Webhook key is deactivated" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Check if chat is enabled for this webhook
+        if (!webhookData.chat_enabled) {
+          return new Response(
+            JSON.stringify({ error: "Chat API is not enabled for this webhook" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }

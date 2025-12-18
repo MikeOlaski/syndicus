@@ -62,6 +62,7 @@ interface OutboundWebhook {
   last_response_status: number | null;
   created_at: string;
   expires_at: string | null;
+  chat_enabled: boolean;
 }
 
 interface WebhookLog {
@@ -129,6 +130,7 @@ const AdminOutboundWebhooks = () => {
     url: '',
     events: ['coach.published', 'coach.updated', 'coach.unpublished'],
     expiryOption: 'never',
+    chatEnabled: false,
   });
 
   useEffect(() => {
@@ -184,13 +186,14 @@ const AdminOutboundWebhooks = () => {
           url: newWebhook.url,
           events: newWebhook.events,
           expires_at: getExpiryDate(newWebhook.expiryOption),
+          chat_enabled: newWebhook.chatEnabled,
         });
 
       if (error) throw error;
       
       toast.success("Webhook added successfully");
       setIsAddModalOpen(false);
-      setNewWebhook({ name: '', description: '', url: '', events: ['coach.published', 'coach.updated', 'coach.unpublished'], expiryOption: 'never' });
+      setNewWebhook({ name: '', description: '', url: '', events: ['coach.published', 'coach.updated', 'coach.unpublished'], expiryOption: 'never', chatEnabled: false });
       fetchWebhooks();
     } catch (error) {
       toast.error("Failed to add webhook");
@@ -410,6 +413,20 @@ const AdminOutboundWebhooks = () => {
                     </div>
                   </div>
                   <div>
+                    <Label>Chat API</Label>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Checkbox
+                        id="chat-enabled"
+                        checked={newWebhook.chatEnabled}
+                        onCheckedChange={(checked) => setNewWebhook({ ...newWebhook, chatEnabled: !!checked })}
+                      />
+                      <Label htmlFor="chat-enabled" className="font-normal">Allow Chat API access</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enable this to allow external sites to use the chat feature with this webhook's secret key.
+                    </p>
+                  </div>
+                  <div>
                     <Label>Secret Key Expiration</Label>
                     <Select 
                       value={newWebhook.expiryOption} 
@@ -621,6 +638,16 @@ const AdminOutboundWebhooks = () => {
                           </Label>
                         </div>
                       ))}
+                      <div className="flex items-center space-x-2 ml-4 pl-4 border-l">
+                        <Checkbox
+                          id={`${webhook.id}-chat-enabled`}
+                          checked={webhook.chat_enabled}
+                          onCheckedChange={(checked) => handleWebhookChange(webhook.id, 'chat_enabled', !!checked)}
+                        />
+                        <Label htmlFor={`${webhook.id}-chat-enabled`} className="font-normal text-sm">
+                          Chat API
+                        </Label>
+                      </div>
                     </div>
                   </div>
 
