@@ -29,50 +29,44 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate API key
-    const { data: apiKeyData, error: apiKeyError } = await supabase
-      .from("external_api_keys")
-      .select("id, name, permissions, is_active, allowed_origins")
-      .eq("api_key", apiKey)
+    // Validate against outbound_webhooks secret_key
+    const { data: webhookData, error: webhookError } = await supabase
+      .from("outbound_webhooks")
+      .select("id, name, secret_key, is_active, expires_at")
+      .eq("secret_key", apiKey)
       .single();
 
-    if (apiKeyError || !apiKeyData) {
-      console.error("Invalid API key:", apiKeyError);
+    if (webhookError || !webhookData) {
+      console.error("Invalid API key:", webhookError);
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!apiKeyData.is_active) {
+    if (!webhookData.is_active) {
       return new Response(
         JSON.stringify({ error: "API key is deactivated" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check permission
-    if (!apiKeyData.permissions?.includes("read_coaches")) {
-      return new Response(
-        JSON.stringify({ error: "API key does not have read_coaches permission" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Optional: Check origin
-    const origin = req.headers.get("origin");
-    if (origin && apiKeyData.allowed_origins?.length > 0) {
-      if (!apiKeyData.allowed_origins.includes(origin)) {
-        console.warn(`Origin ${origin} not in allowed list for API key ${apiKeyData.name}`);
-        // Note: We log but don't block - can be made stricter if needed
+    // Check if expired
+    if (webhookData.expires_at) {
+      const expiresAt = new Date(webhookData.expires_at);
+      if (expiresAt < new Date()) {
+        return new Response(
+          JSON.stringify({ error: "API key has expired" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
-    // Update last_used_at
+    // Update last_triggered_at for tracking
     await supabase
-      .from("external_api_keys")
-      .update({ last_used_at: new Date().toISOString() })
-      .eq("id", apiKeyData.id);
+      .from("outbound_webhooks")
+      .update({ last_triggered_at: new Date().toISOString() })
+      .eq("id", webhookData.id);
 
     // Fetch verified coaches
     const { data: coaches, error: coachesError } = await supabase
@@ -118,7 +112,7 @@ serve(async (req) => {
       };
     }) || [];
 
-    console.log(`Returning ${enrichedCoaches.length} coaches for API key: ${apiKeyData.name}`);
+    console.log(`Returning ${enrichedCoaches.length} coaches for webhook: ${webhookData.name}`);
 
     return new Response(
       JSON.stringify({
