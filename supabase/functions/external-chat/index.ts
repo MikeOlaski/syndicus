@@ -36,100 +36,54 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    let keySource: "external_api_keys" | "outbound_webhooks" = "external_api_keys";
-    let keyName = "";
-    let isValid = false;
-
-    // First, try to validate against external_api_keys table
-    const { data: apiKeyData, error: apiKeyError } = await supabase
-      .from("external_api_keys")
-      .select("id, name, permissions, is_active, allowed_origins")
-      .eq("api_key", apiKey)
+    // Validate against outbound_webhooks secret_key
+    const { data: webhookData, error: webhookError } = await supabase
+      .from("outbound_webhooks")
+      .select("id, name, secret_key, is_active, expires_at, chat_enabled")
+      .eq("secret_key", apiKey)
       .single();
 
-    if (apiKeyData && !apiKeyError) {
-      // Found in external_api_keys
-      if (!apiKeyData.is_active) {
-        return new Response(
-          JSON.stringify({ error: "API key is deactivated" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Check chat permission for external_api_keys
-      if (!apiKeyData.permissions?.includes("chat")) {
-        return new Response(
-          JSON.stringify({ error: "API key does not have chat permission" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Update last_used_at
-      await supabase
-        .from("external_api_keys")
-        .update({ last_used_at: new Date().toISOString() })
-        .eq("id", apiKeyData.id);
-
-      keySource = "external_api_keys";
-      keyName = apiKeyData.name;
-      isValid = true;
-    } else {
-      // Try to validate against outbound_webhooks secret_key
-      const { data: webhookData, error: webhookError } = await supabase
-        .from("outbound_webhooks")
-        .select("id, name, secret_key, is_active, expires_at, chat_enabled")
-        .eq("secret_key", apiKey)
-        .single();
-
-      if (webhookData && !webhookError) {
-        // Found in outbound_webhooks
-        if (!webhookData.is_active) {
-          return new Response(
-            JSON.stringify({ error: "Webhook key is deactivated" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        // Check if chat is enabled for this webhook
-        if (!webhookData.chat_enabled) {
-          return new Response(
-            JSON.stringify({ error: "Chat API is not enabled for this webhook" }),
-            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        // Check if expired
-        if (webhookData.expires_at) {
-          const expiresAt = new Date(webhookData.expires_at);
-          if (expiresAt < new Date()) {
-            return new Response(
-              JSON.stringify({ error: "Webhook key has expired" }),
-              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
-          }
-        }
-
-        // Update last_triggered_at for tracking
-        await supabase
-          .from("outbound_webhooks")
-          .update({ last_triggered_at: new Date().toISOString() })
-          .eq("id", webhookData.id);
-
-        keySource = "outbound_webhooks";
-        keyName = webhookData.name;
-        isValid = true;
-      }
-    }
-
-    if (!isValid) {
-      console.error("Invalid API key - not found in either table");
+    if (webhookError || !webhookData) {
+      console.error("Invalid API key - not found in outbound_webhooks");
       return new Response(
         JSON.stringify({ error: "Invalid API key" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`API key validated from ${keySource}: ${keyName}`);
+    if (!webhookData.is_active) {
+      return new Response(
+        JSON.stringify({ error: "Webhook key is deactivated" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if chat is enabled for this webhook
+    if (!webhookData.chat_enabled) {
+      return new Response(
+        JSON.stringify({ error: "Chat API is not enabled for this webhook" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if expired
+    if (webhookData.expires_at) {
+      const expiresAt = new Date(webhookData.expires_at);
+      if (expiresAt < new Date()) {
+        return new Response(
+          JSON.stringify({ error: "Webhook key has expired" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Update last_triggered_at for tracking
+    await supabase
+      .from("outbound_webhooks")
+      .update({ last_triggered_at: new Date().toISOString() })
+      .eq("id", webhookData.id);
+
+    console.log(`API key validated from outbound_webhooks: ${webhookData.name}`);
 
     // Parse request body
     const body = await req.json();
@@ -197,8 +151,8 @@ serve(async (req) => {
         action: "sendMessage",
         chatInput: message,
         source: "external_api",
-        api_key_name: keyName,
-        key_source: keySource,
+        api_key_name: webhookData.name,
+        key_source: "outbound_webhooks",
       }),
     });
 
@@ -211,10 +165,10 @@ serve(async (req) => {
       );
     }
 
-    let webhookData;
+    let responseData;
     try {
-      webhookData = await webhookResponse.json();
-      console.log("Webhook response data:", JSON.stringify(webhookData));
+      responseData = await webhookResponse.json();
+      console.log("Webhook response data:", JSON.stringify(responseData));
     } catch (e) {
       console.error("Failed to parse webhook response:", e);
       return new Response(
@@ -225,22 +179,22 @@ serve(async (req) => {
 
     // Extract the response content - check multiple possible field names
     const responseContent = 
-      webhookData.response || 
-      webhookData.message || 
-      webhookData.content || 
-      webhookData.output || 
-      webhookData.text || 
-      webhookData.reply ||
-      webhookData.answer ||
-      webhookData.result ||
-      (webhookData.data?.response) ||
-      (webhookData.data?.message) ||
-      (webhookData.data?.output) ||
+      responseData.response || 
+      responseData.message || 
+      responseData.content || 
+      responseData.output || 
+      responseData.text || 
+      responseData.reply ||
+      responseData.answer ||
+      responseData.result ||
+      (responseData.data?.response) ||
+      (responseData.data?.message) ||
+      (responseData.data?.output) ||
       "No response";
     
     console.log("Extracted response content:", responseContent);
 
-    console.log(`External chat success for ${keyName} (${keySource}) -> ${coach.slug}`);
+    console.log(`External chat success for ${webhookData.name} -> ${coach.slug}`);
 
     return new Response(
       JSON.stringify({
