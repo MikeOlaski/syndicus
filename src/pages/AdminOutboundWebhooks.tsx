@@ -213,6 +213,7 @@ const AdminOutboundWebhooks = () => {
           events: webhook.events,
           is_active: webhook.is_active,
           expires_at: webhook.expires_at,
+          chat_enabled: webhook.chat_enabled,
         })
         .eq("id", webhook.id);
 
