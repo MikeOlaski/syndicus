@@ -96,15 +96,27 @@ serve(async (req) => {
       );
     }
 
-    if (!webhooks || webhooks.length === 0) {
-      console.log('[send-coach-webhook] No active webhooks found for event:', event);
+    // Filter out expired webhooks
+    const now = new Date();
+    const validWebhooks = (webhooks || []).filter(webhook => {
+      if (!webhook.expires_at) return true; // Never expires
+      return new Date(webhook.expires_at) > now;
+    });
+
+    const expiredCount = (webhooks?.length || 0) - validWebhooks.length;
+    if (expiredCount > 0) {
+      console.log(`[send-coach-webhook] Skipped ${expiredCount} expired webhook(s)`);
+    }
+
+    if (validWebhooks.length === 0) {
+      console.log('[send-coach-webhook] No active/valid webhooks found for event:', event);
       return new Response(
-        JSON.stringify({ success: true, message: 'No webhooks configured for this event', webhooksSent: 0 }),
+        JSON.stringify({ success: true, message: 'No valid webhooks configured for this event', webhooksSent: 0, expiredSkipped: expiredCount }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[send-coach-webhook] Sending to ${webhooks.length} webhook(s)`);
+    console.log(`[send-coach-webhook] Sending to ${validWebhooks.length} webhook(s)`);
 
     const payload: WebhookPayload = {
       event,
@@ -113,7 +125,7 @@ serve(async (req) => {
     };
 
     const results = await Promise.all(
-      webhooks.map(async (webhook) => {
+      validWebhooks.map(async (webhook) => {
         try {
           console.log(`[send-coach-webhook] Calling webhook: ${webhook.name} (${webhook.url})`);
           
