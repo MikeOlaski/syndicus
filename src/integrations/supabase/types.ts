@@ -347,6 +347,7 @@ export type Database = {
           created_at: string
           description: string | null
           events: string[]
+          expires_at: string | null
           id: string
           is_active: boolean
           last_response_status: number | null
@@ -360,6 +361,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           events?: string[]
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           last_response_status?: number | null
@@ -373,6 +375,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           events?: string[]
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           last_response_status?: number | null

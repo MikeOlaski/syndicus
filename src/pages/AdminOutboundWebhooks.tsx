@@ -20,7 +20,9 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  FileCode
+  FileCode,
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +42,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface OutboundWebhook {
   id: string;
@@ -52,6 +61,7 @@ interface OutboundWebhook {
   last_triggered_at: string | null;
   last_response_status: number | null;
   created_at: string;
+  expires_at: string | null;
 }
 
 interface WebhookLog {
@@ -71,12 +81,41 @@ const EVENT_OPTIONS = [
   { value: 'coach.unpublished', label: 'Coach Unpublished' },
 ];
 
+const EXPIRY_OPTIONS = [
+  { value: 'never', label: 'Never expires' },
+  { value: '1day', label: '1 day' },
+  { value: '7days', label: '7 days' },
+  { value: '30days', label: '30 days' },
+  { value: '90days', label: '90 days' },
+  { value: '1year', label: '1 year' },
+];
+
+const getExpiryDate = (value: string): string | null => {
+  if (value === 'never') return null;
+  const now = new Date();
+  switch (value) {
+    case '1day': now.setDate(now.getDate() + 1); break;
+    case '7days': now.setDate(now.getDate() + 7); break;
+    case '30days': now.setDate(now.getDate() + 30); break;
+    case '90days': now.setDate(now.getDate() + 90); break;
+    case '1year': now.setFullYear(now.getFullYear() + 1); break;
+    default: return null;
+  }
+  return now.toISOString();
+};
+
+const isExpired = (expiresAt: string | null): boolean => {
+  if (!expiresAt) return false;
+  return new Date(expiresAt) < new Date();
+};
+
 const AdminOutboundWebhooks = () => {
   const [webhooks, setWebhooks] = useState<OutboundWebhook[]>([]);
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
@@ -89,6 +128,7 @@ const AdminOutboundWebhooks = () => {
     description: '',
     url: '',
     events: ['coach.published', 'coach.updated', 'coach.unpublished'],
+    expiryOption: 'never',
   });
 
   useEffect(() => {
@@ -143,13 +183,14 @@ const AdminOutboundWebhooks = () => {
           description: newWebhook.description || null,
           url: newWebhook.url,
           events: newWebhook.events,
+          expires_at: getExpiryDate(newWebhook.expiryOption),
         });
 
       if (error) throw error;
       
       toast.success("Webhook added successfully");
       setIsAddModalOpen(false);
-      setNewWebhook({ name: '', description: '', url: '', events: ['coach.published', 'coach.updated', 'coach.unpublished'] });
+      setNewWebhook({ name: '', description: '', url: '', events: ['coach.published', 'coach.updated', 'coach.unpublished'], expiryOption: 'never' });
       fetchWebhooks();
     } catch (error) {
       toast.error("Failed to add webhook");
@@ -168,6 +209,7 @@ const AdminOutboundWebhooks = () => {
           url: webhook.url,
           events: webhook.events,
           is_active: webhook.is_active,
+          expires_at: webhook.expires_at,
         })
         .eq("id", webhook.id);
 
@@ -178,6 +220,33 @@ const AdminOutboundWebhooks = () => {
       console.error(error);
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleRegenerateSecret = async (webhook: OutboundWebhook, expiryOption: string) => {
+    setRegeneratingId(webhook.id);
+    try {
+      // Generate a new secret key
+      const newSecretKey = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const { error } = await supabase
+        .from("outbound_webhooks")
+        .update({
+          secret_key: newSecretKey,
+          expires_at: getExpiryDate(expiryOption),
+        })
+        .eq("id", webhook.id);
+
+      if (error) throw error;
+      toast.success("Secret key regenerated successfully");
+      fetchWebhooks();
+    } catch (error) {
+      toast.error("Failed to regenerate secret key");
+      console.error(error);
+    } finally {
+      setRegeneratingId(null);
     }
   };
 
@@ -340,6 +409,27 @@ const AdminOutboundWebhooks = () => {
                       ))}
                     </div>
                   </div>
+                  <div>
+                    <Label>Secret Key Expiration</Label>
+                    <Select 
+                      value={newWebhook.expiryOption} 
+                      onValueChange={(value) => setNewWebhook({ ...newWebhook, expiryOption: value })}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue placeholder="Select expiration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPIRY_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Secret key will be invalid after expiration. Set to "Never expires" for permanent access.
+                    </p>
+                  </div>
                   <Button onClick={handleAddWebhook} className="w-full">
                     Add Webhook
                   </Button>
@@ -420,14 +510,37 @@ const AdminOutboundWebhooks = () => {
                   </div>
 
                   <div>
-                    <Label className="text-sm text-muted-foreground">Secret Key</Label>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-sm text-muted-foreground">Secret Key</Label>
+                      {webhook.expires_at && (
+                        <div className="flex items-center gap-1">
+                          {isExpired(webhook.expires_at) ? (
+                            <Badge variant="destructive" className="text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Expired
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">
+                              <Clock className="w-3 h-3 mr-1" />
+                              Expires: {new Date(webhook.expires_at).toLocaleDateString()}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      {!webhook.expires_at && (
+                        <Badge variant="secondary" className="text-xs">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Never expires
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Input
                           type={showSecrets[webhook.id] ? "text" : "password"}
                           value={webhook.secret_key}
                           readOnly
-                          className="pr-20"
+                          className={`pr-20 ${isExpired(webhook.expires_at) ? 'border-destructive' : ''}`}
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                           <Button
@@ -452,6 +565,39 @@ const AdminOutboundWebhooks = () => {
                           </Button>
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Regenerate Secret Key Section */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <Select
+                        defaultValue="never"
+                        onValueChange={(value) => handleRegenerateSecret(webhook, value)}
+                        disabled={regeneratingId === webhook.id}
+                      >
+                        <SelectTrigger className="w-[180px] h-8 text-xs">
+                          {regeneratingId === webhook.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <RefreshCw className="w-3 h-3 mr-1" />
+                              <span>Regenerate Key</span>
+                            </>
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EXPIRY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-muted-foreground">
+                        {isExpired(webhook.expires_at) 
+                          ? "Key expired! Regenerate with new expiration." 
+                          : "Select expiration to generate new key"
+                        }
+                      </span>
                     </div>
                   </div>
 
