@@ -344,6 +344,7 @@ export type Database = {
       }
       outbound_webhooks: {
         Row: {
+          chat_enabled: boolean
           created_at: string
           description: string | null
           events: string[]
@@ -358,6 +359,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          chat_enabled?: boolean
           created_at?: string
           description?: string | null
           events?: string[]
@@ -372,6 +374,7 @@ export type Database = {
           url: string
         }
         Update: {
+          chat_enabled?: boolean
           created_at?: string
           description?: string | null
           events?: string[]
