@@ -12,6 +12,7 @@ interface WebhookPayload {
     id: string;
     slug: string;
     name: string;
+    email: string | null;
     specialization: string | null;
     avatar_url: string | null;
     bio: string | null;
@@ -61,10 +62,10 @@ serve(async (req) => {
         );
       }
 
-      // Fetch profile info
+      // Fetch profile info including email
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, avatar_url')
+        .select('full_name, avatar_url, email')
         .eq('id', coachProfile.user_id)
         .single();
 
@@ -72,6 +73,7 @@ serve(async (req) => {
         id: coachProfile.id,
         slug: coachProfile.slug,
         name: profile?.full_name || 'Unknown Coach',
+        email: profile?.email || null,
         specialization: coachProfile.specialization,
         avatar_url: profile?.avatar_url,
         bio: coachProfile.bio,
