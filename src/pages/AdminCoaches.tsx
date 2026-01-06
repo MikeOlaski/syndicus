@@ -106,7 +106,50 @@ const AdminCoaches = () => {
 
   useEffect(() => {
     fetchCoaches();
+
+    // Subscribe to realtime updates for coach_profiles
+    const channel = supabase
+      .channel('admin-coaches-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'coach_profiles'
+        },
+        async (payload) => {
+          console.log('[AdminCoaches] Realtime update:', payload.eventType);
+          
+          if (payload.eventType === 'DELETE') {
+            // Remove deleted coach from state
+            setCoaches(prev => prev.filter(c => c.id !== payload.old.id));
+          } else if (payload.eventType === 'INSERT') {
+            // For new coaches, fetch full data
+            fetchCoaches();
+          } else if (payload.eventType === 'UPDATE') {
+            // Update coach in place without resetting page
+            const updatedProfile = payload.new as any;
+            setCoaches(prev => prev.map(coach => 
+              coach.id === updatedProfile.id 
+                ? { 
+                    ...coach, 
+                    ...updatedProfile,
+                    profiles: coach.profiles // Keep existing profile data
+                  } 
+                : coach
+            ));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  // Track previous filter values to detect actual filter changes
+  const [prevFilters, setPrevFilters] = useState({ searchQuery: "", statusFilter: "all", sortBy: "newest" });
 
   useEffect(() => {
     let filtered = coaches;
@@ -146,7 +189,17 @@ const AdminCoaches = () => {
     });
     
     setFilteredCoaches(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
+    
+    // Only reset to page 1 when filters actually change (not when coaches data updates)
+    const filtersChanged = 
+      prevFilters.searchQuery !== searchQuery || 
+      prevFilters.statusFilter !== statusFilter || 
+      prevFilters.sortBy !== sortBy;
+    
+    if (filtersChanged) {
+      setCurrentPage(1);
+      setPrevFilters({ searchQuery, statusFilter, sortBy });
+    }
   }, [searchQuery, statusFilter, sortBy, coaches]);
 
   // Reset to page 1 when items per page changes
@@ -237,6 +290,18 @@ const AdminCoaches = () => {
 
       const newStatus = !currentStatus;
 
+      // Optimistically update local state immediately
+      setCoaches(prev => prev.map(coach => 
+        coach.id === coachId 
+          ? { 
+              ...coach, 
+              is_verified: newStatus,
+              // If unverifying, also hide from homepage
+              show_on_homepage: newStatus ? coach.show_on_homepage : false
+            } 
+          : coach
+      ));
+
       // Update coach verification status
       const { error } = await supabase
         .from("coach_profiles")
@@ -282,10 +347,14 @@ const AdminCoaches = () => {
         title: "Success",
         description: `Coach ${newStatus ? "verified" : "unverified"} successfully`,
       });
-
-      fetchCoaches();
     } catch (error) {
       console.error("Error updating coach:", error);
+      // Revert optimistic update on error
+      setCoaches(prev => prev.map(coach => 
+        coach.id === coachId 
+          ? { ...coach, is_verified: currentStatus } 
+          : coach
+      ));
       toast({
         title: "Error",
         description: "Failed to update coach verification",
@@ -313,6 +382,13 @@ const AdminCoaches = () => {
       }
 
       const newStatus = !currentStatus;
+
+      // Optimistically update local state immediately
+      setCoaches(prev => prev.map(coach => 
+        coach.id === coachId 
+          ? { ...coach, show_on_homepage: newStatus } 
+          : coach
+      ));
 
       const { error } = await supabase
         .from("coach_profiles")
@@ -349,10 +425,14 @@ const AdminCoaches = () => {
         title: "Success",
         description: `Coach ${newStatus ? "now visible" : "hidden"} on homepage`,
       });
-
-      fetchCoaches();
     } catch (error) {
       console.error("Error updating coach:", error);
+      // Revert optimistic update on error
+      setCoaches(prev => prev.map(coach => 
+        coach.id === coachId 
+          ? { ...coach, show_on_homepage: currentStatus } 
+          : coach
+      ));
       toast({
         title: "Error",
         description: "Failed to update homepage visibility",
