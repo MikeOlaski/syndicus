@@ -28,7 +28,8 @@ const Hero = () => {
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-5xl md:text-6xl font-bold mb-6">
-            One Question. <span className="bg-gradient-primary bg-clip-text text-transparent">Eight Expert Minds.</span>
+            Stop Spinning in Circles.{" "}
+            <span className="bg-gradient-primary bg-clip-text text-transparent">Get Aligned Expert Clarity—Fast.</span>
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
             Your toughest challenges deserve more than one perspective. Our AI-powered Council of Experts combines the
