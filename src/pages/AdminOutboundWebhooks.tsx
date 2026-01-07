@@ -77,9 +77,9 @@ interface WebhookLog {
 }
 
 const EVENT_OPTIONS = [
-  { value: 'coach.published', label: 'Coach Published' },
+  { value: 'coach.verified', label: 'Coach Verified' },
   { value: 'coach.updated', label: 'Coach Updated' },
-  { value: 'coach.unpublished', label: 'Coach Unpublished' },
+  { value: 'coach.unverified', label: 'Coach Unverified' },
 ];
 
 const EXPIRY_OPTIONS = [

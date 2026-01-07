@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface WebhookPayload {
-  event: 'coach.published' | 'coach.updated' | 'coach.unpublished' | 'coach.deleted';
+  event: 'coach.verified' | 'coach.updated' | 'coach.unverified' | 'coach.deleted';
   coach: {
     id: string;
     slug: string;

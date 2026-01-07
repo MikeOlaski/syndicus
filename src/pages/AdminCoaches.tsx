@@ -328,20 +328,18 @@ const AdminCoaches = () => {
           .eq("id", coachId);
       }
 
-      // Only trigger webhook when unverifying (which auto-unpublishes)
-      // When verifying, webhook is triggered when actually publishing (show_on_homepage)
-      if (!newStatus) {
-        console.log(`[AdminCoaches] Triggering webhook: coach.unpublished for coach: ${coachId}`);
-        supabase.functions.invoke("send-coach-webhook", {
-          body: { event: "coach.unpublished", coachId },
-        }).then(({ error: webhookError }) => {
-          if (webhookError) {
-            console.error("[AdminCoaches] Webhook error:", webhookError);
-          } else {
-            console.log("[AdminCoaches] Webhook coach.unpublished sent successfully");
-          }
-        });
-      }
+      // Trigger webhook based on verification status
+      const webhookEvent = newStatus ? "coach.verified" : "coach.unverified";
+      console.log(`[AdminCoaches] Triggering webhook: ${webhookEvent} for coach: ${coachId}`);
+      supabase.functions.invoke("send-coach-webhook", {
+        body: { event: webhookEvent, coachId },
+      }).then(({ error: webhookError }) => {
+        if (webhookError) {
+          console.error("[AdminCoaches] Webhook error:", webhookError);
+        } else {
+          console.log(`[AdminCoaches] Webhook ${webhookEvent} sent successfully`);
+        }
+      });
 
       toast({
         title: "Success",
@@ -407,19 +405,7 @@ const AdminCoaches = () => {
           details: { coach_profile_id: coachId, new_status: newStatus },
         });
 
-      // Trigger webhook for coach published/unpublished
-      const webhookEvent = newStatus ? "coach.published" : "coach.unpublished";
-      console.log(`[AdminCoaches] Triggering webhook: ${webhookEvent} for coach: ${coachId}`);
-      
-      supabase.functions.invoke("send-coach-webhook", {
-        body: { event: webhookEvent, coachId },
-      }).then(({ error: webhookError }) => {
-        if (webhookError) {
-          console.error("[AdminCoaches] Webhook error:", webhookError);
-        } else {
-          console.log(`[AdminCoaches] Webhook ${webhookEvent} sent successfully`);
-        }
-      });
+      // Homepage visibility no longer triggers webhooks - only verification does
 
       toast({
         title: "Success",
