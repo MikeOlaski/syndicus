@@ -233,8 +233,8 @@ export const CoachEditModal = ({ coach, open, onOpenChange, onSave }: CoachEditM
 
       if (coachError) throw coachError;
 
-      // Only trigger webhook if coach is verified AND published (show_on_homepage)
-      if (coach.is_verified && coach.show_on_homepage) {
+      // Only trigger webhook if coach is verified
+      if (coach.is_verified) {
         console.log(`[CoachEditModal] Triggering webhook: coach.updated for coach: ${coach.id}`);
         supabase.functions.invoke("send-coach-webhook", {
           body: { event: "coach.updated", coachId: coach.id },

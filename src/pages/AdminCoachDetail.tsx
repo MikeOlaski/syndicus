@@ -487,8 +487,8 @@ const AdminCoachDetail = () => {
         .update(updateData)
         .eq("id", coach.id);
 
-      // Only trigger webhook if coach is verified AND published (show_on_homepage)
-      if (isVerified && showOnHomepage) {
+      // Only trigger webhook if coach is verified
+      if (isVerified) {
         console.log(`[AdminCoachDetail] Triggering webhook: coach.updated for coach: ${coach.id}`);
         supabase.functions.invoke("send-coach-webhook", {
           body: { event: "coach.updated", coachId: coach.id },
