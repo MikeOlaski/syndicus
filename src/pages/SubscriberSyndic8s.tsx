@@ -12,7 +12,8 @@ import {
   Loader2,
   Sparkles,
   ArrowRight,
-  Settings
+  Settings,
+  MessageSquare
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -252,6 +253,14 @@ const SubscriberSyndic8s = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button 
+                      size="sm"
+                      onClick={() => navigate(`/subscriber-dashboard/syndic8s/${group.id}/chat`)}
+                      disabled={group.member_count === 0}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Chat with Council
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
