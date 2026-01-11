@@ -12,8 +12,6 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Play, RefreshCw, CheckCircle, XCircle, Clock, TrendingUp, Target, Zap } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
-import { toast } from "sonner";
-import { Play, RefreshCw, CheckCircle, XCircle, Clock, TrendingUp, Target, Zap } from "lucide-react";
 
 interface EvalCase {
   id: string;
@@ -173,7 +171,7 @@ const AdminSyndic8Eval = () => {
 
   if (loading) {
     return (
-      <DashboardLayout role="admin">
+      <DashboardLayout requiredRole="admin">
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -182,7 +180,7 @@ const AdminSyndic8Eval = () => {
   }
 
   return (
-    <DashboardLayout role="admin">
+    <DashboardLayout requiredRole="admin">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Users, MessageCircle, Zap, Globe, Network, Bot, TrendingUp, Search, X } from "lucide-react";
+import { Users, MessageCircle, Zap, Globe, Network, Bot, TrendingUp, Search, X, Crown } from "lucide-react";
 import { Syndic8SearchResults } from "@/components/Syndic8SearchResults";
+import FeaturedSyndic8Section from "@/components/FeaturedSyndic8Section";
 
 const Syndic8 = () => {
   const navigate = useNavigate();
@@ -35,10 +36,13 @@ const Syndic8 = () => {
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-4xl text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="bg-gradient-primary bg-clip-text text-transparent">Council of Minds</span>
+          <h1 className="text-5xl md:text-7xl font-bold mb-4">
+            <span className="text-foreground">Syndic8</span>
           </h1>
-          <p className="text-xl text-foreground font-medium mb-4">Combine Syndicated Experts for Balanced Perspectives</p>
+          <h2 className="text-3xl md:text-4xl font-semibold mb-6">
+            <span className="bg-gradient-primary bg-clip-text text-transparent">Council of Minds</span>
+          </h2>
+          <p className="text-xl text-foreground font-medium mb-4">Syndicated Experts for Balanced Perspectives</p>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Get varied, balanced insights on your toughest challenges. Multiple expert perspectives 
             working together to deliver comprehensive recommendations you can trust.
@@ -51,6 +55,26 @@ const Syndic8 = () => {
               Learn More
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Featured Public Syndic8 Groups */}
+      <section className="py-16 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <Badge className="mb-4" variant="outline">
+              <Crown className="w-3 h-3 mr-2" />
+              Community Councils
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">
+              Popular <span className="bg-gradient-primary bg-clip-text text-transparent">Published Councils</span>
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Explore expert councils published by our community. Each council has been curated and approved by all participating coaches.
+            </p>
+          </div>
+          
+          <FeaturedSyndic8Section limit={6} showHeader={false} />
         </div>
       </section>
 

@@ -608,6 +608,13 @@ export type Database = {
             foreignKeyName: "syndic8_eval_results_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
+            referencedRelation: "public_syndic8_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_eval_results_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
             referencedRelation: "syndic8_groups"
             referencedColumns: ["id"]
           },
@@ -616,23 +623,36 @@ export type Database = {
       syndic8_group_members: {
         Row: {
           added_at: string
+          approved_at: string | null
           coach_id: string
           group_id: string
+          has_approved_public: boolean | null
           id: string
         }
         Insert: {
           added_at?: string
+          approved_at?: string | null
           coach_id: string
           group_id: string
+          has_approved_public?: boolean | null
           id?: string
         }
         Update: {
           added_at?: string
+          approved_at?: string | null
           coach_id?: string
           group_id?: string
+          has_approved_public?: boolean | null
           id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "syndic8_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "public_syndic8_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "syndic8_group_members_group_id_fkey"
             columns: ["group_id"]
@@ -675,6 +695,13 @@ export type Database = {
             foreignKeyName: "syndic8_group_settings_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: true
+            referencedRelation: "public_syndic8_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_group_settings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: true
             referencedRelation: "syndic8_groups"
             referencedColumns: ["id"]
           },
@@ -682,27 +709,42 @@ export type Database = {
       }
       syndic8_groups: {
         Row: {
+          cover_image_url: string | null
           created_at: string
           description: string | null
           id: string
+          is_featured: boolean | null
+          is_public: boolean | null
           name: string
           owner_id: string
+          popularity_score: number | null
+          public_description: string | null
           updated_at: string
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
           name: string
           owner_id: string
+          popularity_score?: number | null
+          public_description?: string | null
           updated_at?: string
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
           name?: string
           owner_id?: string
+          popularity_score?: number | null
+          public_description?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -797,6 +839,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "syndic8_sessions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "public_syndic8_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "syndic8_sessions_group_id_fkey"
             columns: ["group_id"]
@@ -1004,6 +1053,48 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string | null
+        }
+        Relationships: []
+      }
+      public_syndic8_groups: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_featured: boolean | null
+          member_count: number | null
+          name: string | null
+          owner_id: string | null
+          popularity_score: number | null
+          public_description: string | null
+          specializations: string[] | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          member_count?: never
+          name?: string | null
+          owner_id?: string | null
+          popularity_score?: number | null
+          public_description?: string | null
+          specializations?: never
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          member_count?: never
+          name?: string | null
+          owner_id?: string | null
+          popularity_score?: number | null
+          public_description?: string | null
+          specializations?: never
         }
         Relationships: []
       }
