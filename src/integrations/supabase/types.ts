@@ -514,6 +514,105 @@ export type Database = {
           },
         ]
       }
+      syndic8_eval_cases: {
+        Row: {
+          category: string
+          created_at: string
+          difficulty: string
+          expected_council_template: string
+          expected_dissent_topics: Json | null
+          expected_themes: Json | null
+          id: string
+          is_active: boolean
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          difficulty: string
+          expected_council_template?: string
+          expected_dissent_topics?: Json | null
+          expected_themes?: Json | null
+          id?: string
+          is_active?: boolean
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          difficulty?: string
+          expected_council_template?: string
+          expected_dissent_topics?: Json | null
+          expected_themes?: Json | null
+          id?: string
+          is_active?: boolean
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      syndic8_eval_results: {
+        Row: {
+          created_at: string
+          eval_case_id: string
+          expert_critiques: Json | null
+          expert_drafts: Json | null
+          group_id: string
+          id: string
+          latency_ms: number | null
+          notes: string | null
+          passed: boolean | null
+          scores: Json | null
+          stage_timings: Json | null
+          synthesis_output: Json | null
+        }
+        Insert: {
+          created_at?: string
+          eval_case_id: string
+          expert_critiques?: Json | null
+          expert_drafts?: Json | null
+          group_id: string
+          id?: string
+          latency_ms?: number | null
+          notes?: string | null
+          passed?: boolean | null
+          scores?: Json | null
+          stage_timings?: Json | null
+          synthesis_output?: Json | null
+        }
+        Update: {
+          created_at?: string
+          eval_case_id?: string
+          expert_critiques?: Json | null
+          expert_drafts?: Json | null
+          group_id?: string
+          id?: string
+          latency_ms?: number | null
+          notes?: string | null
+          passed?: boolean | null
+          scores?: Json | null
+          stage_timings?: Json | null
+          synthesis_output?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syndic8_eval_results_eval_case_id_fkey"
+            columns: ["eval_case_id"]
+            isOneToOne: false
+            referencedRelation: "syndic8_eval_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_eval_results_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "syndic8_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       syndic8_group_members: {
         Row: {
           added_at: string
