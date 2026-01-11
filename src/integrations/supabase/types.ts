@@ -1121,6 +1121,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_syndic8_group_owner: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_syndic8_group_public: { Args: { _group_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "coach" | "subscriber"
