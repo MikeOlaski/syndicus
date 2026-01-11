@@ -431,10 +431,43 @@ async function getSynthesis(
   };
 }
 
+// Tracing structure for observability
+interface CouncilTrace {
+  requestId: string;
+  groupId: string;
+  councilSize: number;
+  template: string;
+  stages: {
+    drafts: { startMs: number; endMs: number; durationMs: number; expertTimings: Array<{expertId: string; durationMs: number}> };
+    critiques: { startMs: number; endMs: number; durationMs: number };
+    synthesis: { startMs: number; endMs: number; durationMs: number };
+  };
+  totalMs: number;
+  success: boolean;
+  errorMessage?: string;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Initialize trace
+  const trace: CouncilTrace = {
+    requestId: crypto.randomUUID(),
+    groupId: "",
+    councilSize: 0,
+    template: "",
+    stages: {
+      drafts: { startMs: 0, endMs: 0, durationMs: 0, expertTimings: [] },
+      critiques: { startMs: 0, endMs: 0, durationMs: 0 },
+      synthesis: { startMs: 0, endMs: 0, durationMs: 0 }
+    },
+    totalMs: 0,
+    success: false
+  };
+  
+  const requestStartTime = Date.now();
 
   try {
     const body = await req.json();
@@ -446,6 +479,9 @@ serve(async (req) => {
       skipCritique = false,
       conversationHistory = []
     } = body;
+    
+    trace.groupId = groupId;
+    trace.template = template;
 
     // Validate inputs
     if (!groupId || typeof groupId !== "string") {
@@ -526,12 +562,16 @@ serve(async (req) => {
       personality: m.coach_profiles.personality || ""
     }));
 
-    console.log(`[syndic8-council] Starting council session with ${councilMembers.length} experts, template: ${template}`);
+    trace.councilSize = councilMembers.length;
+    console.log(`[syndic8-council] [${trace.requestId}] Starting council session with ${councilMembers.length} experts, template: ${template}`);
 
     // STAGE 1: Parallel Expert Drafts
-    console.log("[syndic8-council] Stage 1: Getting parallel expert drafts...");
-    const draftPromises = councilMembers.map((expert, index) =>
-      getExpertDraft(
+    trace.stages.drafts.startMs = Date.now() - requestStartTime;
+    console.log(`[syndic8-council] [${trace.requestId}] Stage 1: Getting parallel expert drafts...`);
+    
+    const draftPromises = councilMembers.map(async (expert, index) => {
+      const expertStart = Date.now();
+      const result = await getExpertDraft(
         LOVABLE_API_KEY,
         expert,
         template,
@@ -539,17 +579,25 @@ serve(async (req) => {
         index + 1,
         message,
         conversationHistory
-      )
-    );
+      );
+      trace.stages.drafts.expertTimings.push({
+        expertId: expert.id,
+        durationMs: Date.now() - expertStart
+      });
+      return result;
+    });
 
     const expertDrafts = await Promise.all(draftPromises);
-    console.log(`[syndic8-council] Stage 1 complete: ${expertDrafts.length} drafts received`);
+    trace.stages.drafts.endMs = Date.now() - requestStartTime;
+    trace.stages.drafts.durationMs = trace.stages.drafts.endMs - trace.stages.drafts.startMs;
+    console.log(`[syndic8-council] [${trace.requestId}] Stage 1 complete: ${expertDrafts.length} drafts received in ${trace.stages.drafts.durationMs}ms`);
 
     // STAGE 2: Cross-Review (Critique) - each expert reviews one other
     let critiques: ExpertCritique[] = [];
+    trace.stages.critiques.startMs = Date.now() - requestStartTime;
     
     if (!skipCritique && councilMembers.length > 1) {
-      console.log("[syndic8-council] Stage 2: Getting expert critiques...");
+      console.log(`[syndic8-council] [${trace.requestId}] Stage 2: Getting expert critiques...`);
       const critiquePromises: Promise<ExpertCritique>[] = [];
       
       // Each expert reviews the next expert's draft (circular)
@@ -564,13 +612,23 @@ serve(async (req) => {
       }
 
       critiques = await Promise.all(critiquePromises);
-      console.log(`[syndic8-council] Stage 2 complete: ${critiques.length} critiques received`);
     }
+    
+    trace.stages.critiques.endMs = Date.now() - requestStartTime;
+    trace.stages.critiques.durationMs = trace.stages.critiques.endMs - trace.stages.critiques.startMs;
+    console.log(`[syndic8-council] [${trace.requestId}] Stage 2 complete: ${critiques.length} critiques received in ${trace.stages.critiques.durationMs}ms`);
 
     // STAGE 3: Synthesis by Chair
-    console.log("[syndic8-council] Stage 3: Synthesizing council response...");
+    trace.stages.synthesis.startMs = Date.now() - requestStartTime;
+    console.log(`[syndic8-council] [${trace.requestId}] Stage 3: Synthesizing council response...`);
     const synthesis = await getSynthesis(LOVABLE_API_KEY, template, expertDrafts, critiques);
-    console.log("[syndic8-council] Stage 3 complete: Synthesis ready");
+    trace.stages.synthesis.endMs = Date.now() - requestStartTime;
+    trace.stages.synthesis.durationMs = trace.stages.synthesis.endMs - trace.stages.synthesis.startMs;
+    console.log(`[syndic8-council] [${trace.requestId}] Stage 3 complete: Synthesis ready in ${trace.stages.synthesis.durationMs}ms`);
+
+    // Finalize trace
+    trace.totalMs = Date.now() - requestStartTime;
+    trace.success = true;
 
     // Prepare response with full council data
     const councilResponse = {
@@ -597,8 +655,12 @@ serve(async (req) => {
         councilSize: councilMembers.length,
         avgConfidence: expertDrafts.reduce((sum, d) => sum + d.confidence, 0) / expertDrafts.length,
         hasSignificantDissent: synthesis.dissentSummary !== null && synthesis.dissentSummary !== ""
-      }
+      },
+      trace
     };
+
+    // Log structured trace for observability
+    console.log(JSON.stringify({ type: "COUNCIL_TRACE", ...trace }));
 
     return new Response(
       JSON.stringify(councilResponse),
@@ -608,6 +670,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    // Log error trace
+    trace.totalMs = Date.now() - requestStartTime;
+    trace.success = false;
+    trace.errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.log(JSON.stringify({ type: "COUNCIL_TRACE_ERROR", ...trace }));
+    
     console.error("[syndic8-council] Error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),

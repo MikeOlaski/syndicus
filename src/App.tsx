@@ -21,6 +21,7 @@ import AdminWebhooks from "./pages/AdminWebhooks";
 import AdminOutboundWebhooks from "./pages/AdminOutboundWebhooks";
 import AdminTemplates from "./pages/AdminTemplates";
 import AdminConversations from "./pages/AdminConversations";
+import AdminSyndic8Eval from "./pages/AdminSyndic8Eval";
 
 import ChatPage from "./pages/ChatPage";
 import MyTwin from "./pages/MyTwin";
@@ -84,6 +85,7 @@ const App = () => (
           <Route path="/admin-dashboard/templates" element={<AdminTemplates />} />
           <Route path="/admin-dashboard/webhooks" element={<AdminWebhooks />} />
           <Route path="/admin-dashboard/outbound-webhooks" element={<AdminOutboundWebhooks />} />
+          <Route path="/admin-dashboard/syndic8-eval" element={<AdminSyndic8Eval />} />
           
           <Route path="/admin-dashboard/chat" element={<ChatPage role="admin" />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
