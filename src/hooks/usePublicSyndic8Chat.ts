@@ -81,38 +81,50 @@ export const usePublicSyndic8Chat = (groupId: string | undefined) => {
           publicDescription: groupData.public_description,
         });
 
-        // Fetch members via public_syndic8_groups specializations or directly
-        const { data: membersData } = await supabase
+        // Fetch members separately (avoid join issues with schema cache)
+        const { data: membersData, error: membersError } = await supabase
           .from("syndic8_group_members")
-          .select(`
-            id,
-            coach_id,
-            coach_profiles!inner (
-              id,
-              user_id,
-              specialization
-            )
-          `)
+          .select("id, coach_id")
           .eq("group_id", groupId);
 
+        if (membersError) {
+          console.error("Error fetching members:", membersError);
+        }
+
         if (membersData && membersData.length > 0) {
+          // Fetch coach profiles separately
+          const coachIds = membersData.map((m) => m.coach_id);
+          const { data: coachProfiles } = await supabase
+            .from("coach_profiles")
+            .select("id, user_id, specialization")
+            .in("id", coachIds);
+
+          const coachMap = new Map(
+            coachProfiles?.map(cp => [cp.id, { userId: cp.user_id, specialization: cp.specialization }]) || []
+          );
+
+          // Get user IDs for profile lookup
+          const userIds = coachProfiles?.map(cp => cp.user_id) || [];
+          
           // Get profile info via RPC function (works for verified coaches)
-          const userIds = membersData.map((m: any) => m.coach_profiles.user_id);
           const { data: profiles } = await supabase.rpc("get_public_coach_profiles", {
             coach_ids: userIds,
           });
 
           const profileMap = new Map(
-            profiles?.map((p: any) => [p.id, { name: p.full_name, avatar: p.avatar_url }]) || []
+            profiles?.map((p: { id: string; full_name: string | null; avatar_url: string | null }) => 
+              [p.id, { name: p.full_name, avatar: p.avatar_url }]
+            ) || []
           );
 
-          const formattedMembers: CouncilMember[] = membersData.map((m: any) => {
-            const profile = profileMap.get(m.coach_profiles.user_id);
+          const formattedMembers: CouncilMember[] = membersData.map((m) => {
+            const coach = coachMap.get(m.coach_id);
+            const profile = coach ? profileMap.get(coach.userId) : null;
             return {
               id: m.id,
               coachId: m.coach_id,
               name: profile?.name || "Expert",
-              specialization: m.coach_profiles.specialization || "General",
+              specialization: coach?.specialization || "General",
               avatarUrl: profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.name || 'E'}`,
             };
           });
