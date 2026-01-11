@@ -543,6 +543,44 @@ export type Database = {
           },
         ]
       }
+      syndic8_group_settings: {
+        Row: {
+          council_template: string
+          created_at: string
+          group_id: string
+          require_dissent: boolean
+          show_expert_reasoning: boolean
+          synthesis_style: string
+          updated_at: string
+        }
+        Insert: {
+          council_template?: string
+          created_at?: string
+          group_id: string
+          require_dissent?: boolean
+          show_expert_reasoning?: boolean
+          synthesis_style?: string
+          updated_at?: string
+        }
+        Update: {
+          council_template?: string
+          created_at?: string
+          group_id?: string
+          require_dissent?: boolean
+          show_expert_reasoning?: boolean
+          synthesis_style?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syndic8_group_settings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: true
+            referencedRelation: "syndic8_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       syndic8_groups: {
         Row: {
           created_at: string
@@ -569,6 +607,119 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      syndic8_messages: {
+        Row: {
+          content: string
+          created_at: string
+          expert_coach_id: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          session_id: string
+          stage: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          expert_coach_id?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          session_id: string
+          stage?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          expert_coach_id?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          session_id?: string
+          stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syndic8_messages_expert_coach_id_fkey"
+            columns: ["expert_coach_id"]
+            isOneToOne: false
+            referencedRelation: "coach_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_messages_expert_coach_id_fkey"
+            columns: ["expert_coach_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "syndic8_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      syndic8_sessions: {
+        Row: {
+          council_template: string
+          created_at: string
+          ended_at: string | null
+          group_id: string
+          id: string
+          message_count: number
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          council_template?: string
+          created_at?: string
+          ended_at?: string | null
+          group_id: string
+          id?: string
+          message_count?: number
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          council_template?: string
+          created_at?: string
+          ended_at?: string | null
+          group_id?: string
+          id?: string
+          message_count?: number
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syndic8_sessions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "syndic8_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syndic8_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

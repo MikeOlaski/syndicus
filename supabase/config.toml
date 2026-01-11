@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.send-coach-webhook]
 verify_jwt = true
+
+[functions.syndic8-council]
+verify_jwt = true
