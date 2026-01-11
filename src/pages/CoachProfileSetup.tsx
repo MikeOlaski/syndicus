@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2, Mail, Calendar, Globe, Twitter, Linkedin, Instagram } from "lucide-react";
+import { Loader2, CheckCircle2, Circle, Camera, Upload, Sparkles, PanelRightClose, PanelRightOpen, Wand2, Mail, Calendar, Globe, Twitter, Linkedin, Instagram, Eye, EyeOff, ExternalLink, Shield, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIProfileAssistant } from "@/components/AIProfileAssistant";
@@ -24,6 +26,9 @@ interface CoachProfile {
   twitter_url: string | null;
   linkedin_url: string | null;
   instagram_url: string | null;
+  show_on_homepage: boolean | null;
+  is_verified: boolean | null;
+  slug: string | null;
 }
 
 const CoachProfileSetup = () => {
@@ -47,7 +52,10 @@ const CoachProfileSetup = () => {
     website_url: "",
     twitter_url: "",
     linkedin_url: "",
-    instagram_url: ""
+    instagram_url: "",
+    show_on_homepage: false,
+    is_verified: false,
+    slug: null
   });
   const [expertiseInput, setExpertiseInput] = useState("");
   const [currentTab, setCurrentTab] = useState("overview");
@@ -102,7 +110,10 @@ const CoachProfileSetup = () => {
           website_url: data.website_url || "",
           twitter_url: data.twitter_url || "",
           linkedin_url: data.linkedin_url || "",
-          instagram_url: data.instagram_url || ""
+          instagram_url: data.instagram_url || "",
+          show_on_homepage: data.show_on_homepage ?? false,
+          is_verified: data.is_verified ?? false,
+          slug: data.slug || null
         });
       } else {
         // No coach profile found - user might not have coach setup yet
@@ -257,7 +268,8 @@ const CoachProfileSetup = () => {
           website_url: profile.website_url || null,
           twitter_url: profile.twitter_url || null,
           linkedin_url: profile.linkedin_url || null,
-          instagram_url: profile.instagram_url || null
+          instagram_url: profile.instagram_url || null,
+          show_on_homepage: profile.show_on_homepage
         })
         .eq("user_id", user.id);
 
@@ -481,6 +493,7 @@ const CoachProfileSetup = () => {
                 <TabsTrigger value="expertise">Expertise</TabsTrigger>
                 <TabsTrigger value="personality">Personality & Style</TabsTrigger>
                 <TabsTrigger value="pricing">Pricing</TabsTrigger>
+                <TabsTrigger value="visibility">Visibility</TabsTrigger>
               </TabsList>
 
           <TabsContent value="overview">
@@ -814,6 +827,122 @@ const CoachProfileSetup = () => {
                   <p className="text-sm text-muted-foreground mt-1">
                     This is your standard hourly coaching rate.
                   </p>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="visibility">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Public Visibility Settings
+              </h2>
+              
+              <div className="space-y-6">
+                {/* Verification Status */}
+                <div className="p-4 rounded-lg border bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Shield className={`w-5 h-5 ${profile.is_verified ? "text-green-600" : "text-muted-foreground"}`} />
+                      <div>
+                        <p className="font-medium">Verification Status</p>
+                        <p className="text-sm text-muted-foreground">
+                          {profile.is_verified 
+                            ? "Your profile is verified and can appear in the public directory." 
+                            : "Your profile is not yet verified. Contact admin for verification."}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={profile.is_verified ? "default" : "secondary"}>
+                      {profile.is_verified ? "Verified" : "Unverified"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Show on Homepage Toggle */}
+                <div className="p-4 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {profile.show_on_homepage ? (
+                        <Eye className="w-5 h-5 text-primary" />
+                      ) : (
+                        <EyeOff className="w-5 h-5 text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="font-medium">Show in Public Directory</p>
+                        <p className="text-sm text-muted-foreground">
+                          When enabled, your profile will appear in the public coach directory for subscribers to discover.
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={profile.show_on_homepage ?? false}
+                      onCheckedChange={(checked) => setProfile({ ...profile, show_on_homepage: checked })}
+                      disabled={!profile.is_verified}
+                    />
+                  </div>
+                  {!profile.is_verified && (
+                    <Alert className="mt-4" variant="default">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Verification Required</AlertTitle>
+                      <AlertDescription>
+                        Your profile must be verified by an admin before you can enable public visibility.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+
+                {/* Public Profile Link */}
+                {profile.slug && (
+                  <div className="p-4 rounded-lg border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium mb-1">Your Public Profile</p>
+                        <p className="text-sm text-muted-foreground break-all">
+                          {window.location.origin}/{profile.slug}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/${profile.slug}`, "_blank")}
+                        className="gap-2 shrink-0"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        View Profile
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Visibility Summary */}
+                <div className="p-4 rounded-lg border border-dashed">
+                  <h3 className="font-medium mb-2">Current Visibility Status</h3>
+                  <div className="flex items-center gap-2">
+                    {profile.is_verified && profile.show_on_homepage ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        <span className="text-sm text-green-700 dark:text-green-400">
+                          Your profile is live and visible in the public directory
+                        </span>
+                      </>
+                    ) : profile.is_verified ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="text-sm text-amber-700 dark:text-amber-400">
+                          Your profile is verified but hidden from the public directory
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          Your profile is not publicly visible (awaiting verification)
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </Card>
