@@ -146,15 +146,15 @@ const SubscriberSyndic8Manage = () => {
           coachProfiles?.map(cp => [cp.id, { userId: cp.user_id, specialization: cp.specialization }]) || []
         );
 
-        // Fetch user profiles
+        // Fetch user profiles using RPC function (avoids RLS issues)
         const userIds = coachProfiles?.map(cp => cp.user_id) || [];
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", userIds);
+          .rpc("get_public_coach_profiles", { coach_ids: userIds });
 
         const profileMap = new Map(
-          profiles?.map((p) => [p.id, { name: p.full_name, avatar: p.avatar_url }]) || []
+          profiles?.map((p: { id: string; full_name: string | null; avatar_url: string | null }) => 
+            [p.id, { name: p.full_name, avatar: p.avatar_url }]
+          ) || []
         );
 
         const formattedMembers: GroupMember[] = membersData.map((m) => {
@@ -192,14 +192,7 @@ const SubscriberSyndic8Manage = () => {
       // Get coaches the user is subscribed to
       const { data: subscriptions, error: subError } = await supabase
         .from("subscriptions")
-        .select(`
-          coach_id,
-          coach_profiles!inner (
-            id,
-            user_id,
-            specialization
-          )
-        `)
+        .select("coach_id")
         .eq("subscriber_id", user.id)
         .eq("status", "active");
 
@@ -210,32 +203,44 @@ const SubscriberSyndic8Manage = () => {
         return;
       }
 
+      // Get coach profile details separately to avoid join issues
+      const coachIds = subscriptions.map(s => s.coach_id);
+      const { data: coachProfiles } = await supabase
+        .from("coach_profiles")
+        .select("id, user_id, specialization")
+        .in("user_id", coachIds);
+
+      if (!coachProfiles || coachProfiles.length === 0) {
+        setAvailableCoaches([]);
+        return;
+      }
+
       // Get existing member coach IDs
       const existingCoachIds = members.map(m => m.coachId);
 
       // Filter out already added coaches
-      const available = subscriptions.filter(
-        (s: any) => !existingCoachIds.includes(s.coach_profiles.id)
+      const available = coachProfiles.filter(
+        (cp) => !existingCoachIds.includes(cp.id)
       );
 
-      // Get profile info
-      const userIds = available.map((s: any) => s.coach_profiles.user_id);
+      // Get profile info using RPC function
+      const userIds = available.map((cp) => cp.user_id);
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .in("id", userIds);
+        .rpc("get_public_coach_profiles", { coach_ids: userIds });
 
       const profileMap = new Map(
-        profiles?.map((p) => [p.id, { name: p.full_name, avatar: p.avatar_url }]) || []
+        profiles?.map((p: { id: string; full_name: string | null; avatar_url: string | null }) => 
+          [p.id, { name: p.full_name, avatar: p.avatar_url }]
+        ) || []
       );
 
-      const formattedCoaches: AvailableCoach[] = available.map((s: any) => {
-        const profile = profileMap.get(s.coach_profiles.user_id);
+      const formattedCoaches: AvailableCoach[] = available.map((cp) => {
+        const profile = profileMap.get(cp.user_id);
         return {
-          id: s.coach_profiles.id,
-          userId: s.coach_profiles.user_id,
+          id: cp.id,
+          userId: cp.user_id,
           name: profile?.name || "Coach",
-          specialization: s.coach_profiles.specialization,
+          specialization: cp.specialization,
           avatarUrl: profile?.avatar,
         };
       });
