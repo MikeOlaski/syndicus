@@ -19,32 +19,37 @@ const Stats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch active (verified) coaches count
+        // Fetch active (verified) coaches count - uses existing RLS policy
         const { count: coachCount, error: coachError } = await supabase
           .from("coach_profiles")
           .select("*", { count: "exact", head: true })
-          .eq("is_verified", true);
+          .eq("is_verified", true)
+          .eq("show_on_homepage", true);
 
-        if (coachError) throw coachError;
+        if (coachError) {
+          console.error("Coach count error:", coachError);
+        }
 
-        // Fetch total sessions from coach_sessions table (real-time accurate)
-        const { count: sessionCount, error: sessionError } = await supabase
-          .from("coach_sessions")
-          .select("*", { count: "exact", head: true });
+        // Use security definer function to count sessions
+        const { data: sessionData, error: sessionError } = await supabase
+          .rpc("count_coach_sessions");
 
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error("Session count error:", sessionError);
+        }
 
-        // Fetch Syndic8 groups count
-        const { count: syndic8Count, error: syndic8Error } = await supabase
-          .from("syndic8_groups")
-          .select("*", { count: "exact", head: true });
+        // Use security definer function to count syndic8 groups
+        const { data: syndic8Data, error: syndic8Error } = await supabase
+          .rpc("count_syndic8_groups");
 
-        if (syndic8Error) throw syndic8Error;
+        if (syndic8Error) {
+          console.error("Syndic8 count error:", syndic8Error);
+        }
 
         setStats({
           activeCoaches: coachCount || 0,
-          totalSessions: sessionCount || 0,
-          activeSyndic8s: syndic8Count || 0,
+          totalSessions: Number(sessionData) || 0,
+          activeSyndic8s: Number(syndic8Data) || 0,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);

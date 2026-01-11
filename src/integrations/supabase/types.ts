@@ -1100,6 +1100,8 @@ export type Database = {
       }
     }
     Functions: {
+      count_coach_sessions: { Args: never; Returns: number }
+      count_syndic8_groups: { Args: never; Returns: number }
       get_public_coach_profiles: {
         Args: { coach_ids: string[] }
         Returns: {
