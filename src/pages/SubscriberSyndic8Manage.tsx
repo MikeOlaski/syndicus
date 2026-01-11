@@ -126,26 +126,28 @@ const SubscriberSyndic8Manage = () => {
       setPublicDescription(groupData.public_description || "");
       setIsPublic(groupData.is_public || false);
 
-      // Fetch members with coach and profile info
+      // Fetch members
       const { data: membersData, error: membersError } = await supabase
         .from("syndic8_group_members")
-        .select(`
-          id,
-          coach_id,
-          has_approved_public,
-          approved_at,
-          coach_profiles!inner (
-            id,
-            user_id,
-            specialization
-          )
-        `)
+        .select("id, coach_id, has_approved_public, approved_at")
         .eq("group_id", groupId);
 
       if (membersError) throw membersError;
 
       if (membersData && membersData.length > 0) {
-        const userIds = membersData.map((m: any) => m.coach_profiles.user_id);
+        // Fetch coach profiles separately
+        const coachIds = membersData.map(m => m.coach_id);
+        const { data: coachProfiles } = await supabase
+          .from("coach_profiles")
+          .select("id, user_id, specialization")
+          .in("id", coachIds);
+
+        const coachMap = new Map(
+          coachProfiles?.map(cp => [cp.id, { userId: cp.user_id, specialization: cp.specialization }]) || []
+        );
+
+        // Fetch user profiles
+        const userIds = coachProfiles?.map(cp => cp.user_id) || [];
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url")
@@ -155,14 +157,15 @@ const SubscriberSyndic8Manage = () => {
           profiles?.map((p) => [p.id, { name: p.full_name, avatar: p.avatar_url }]) || []
         );
 
-        const formattedMembers: GroupMember[] = membersData.map((m: any) => {
-          const profile = profileMap.get(m.coach_profiles.user_id);
+        const formattedMembers: GroupMember[] = membersData.map((m) => {
+          const coach = coachMap.get(m.coach_id);
+          const profile = coach ? profileMap.get(coach.userId) : null;
           return {
             id: m.id,
             coachId: m.coach_id,
             name: profile?.name || "Expert",
-            specialization: m.coach_profiles.specialization,
-            avatarUrl: profile?.avatar,
+            specialization: coach?.specialization || null,
+            avatarUrl: profile?.avatar || null,
             hasApprovedPublic: m.has_approved_public || false,
             approvedAt: m.approved_at,
           };
