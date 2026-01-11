@@ -47,6 +47,7 @@ import SubscriberProfile from "./pages/SubscriberProfile";
 import SubscriberSyndic8s from "./pages/SubscriberSyndic8s";
 import SubscriberSyndic8Manage from "./pages/SubscriberSyndic8Manage";
 import Syndic8Chat from "./pages/Syndic8Chat";
+import PublicSyndic8Chat from "./pages/PublicSyndic8Chat";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/coaches" element={<Coaches />} />
           <Route path="/syndic8" element={<Syndic8 />} />
+          <Route path="/syndic8-chat/:groupId" element={<PublicSyndic8Chat />} />
           <Route path="/create-claim" element={<CreateClaim />} />
           <Route path="/coach-dashboard" element={<CoachDashboard />} />
           <Route path="/coach-dashboard/chat" element={<ChatPage role="coach" />} />
