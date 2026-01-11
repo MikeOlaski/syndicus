@@ -518,32 +518,48 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch council members (coaches in the group)
+    // Fetch council members separately (avoid join issues)
     const { data: groupMembers, error: membersError } = await supabase
       .from("syndic8_group_members")
-      .select(`
-        id,
-        coach_id,
-        coach_profiles!inner (
-          id,
-          user_id,
-          specialization,
-          bio,
-          expertise,
-          personality
-        )
-      `)
+      .select("id, coach_id")
       .eq("group_id", groupId);
 
-    if (membersError || !groupMembers || groupMembers.length === 0) {
+    if (membersError) {
+      console.error("[syndic8-council] Members fetch error:", membersError);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch council members", details: membersError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!groupMembers || groupMembers.length === 0) {
       return new Response(
         JSON.stringify({ error: "No council members found for this group" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Fetch coach profiles separately
+    const coachIds = groupMembers.map((m) => m.coach_id);
+    const { data: coachProfiles, error: coachError } = await supabase
+      .from("coach_profiles")
+      .select("id, user_id, specialization, bio, expertise, personality")
+      .in("id", coachIds);
+
+    if (coachError) {
+      console.error("[syndic8-council] Coach profiles fetch error:", coachError);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch coach profiles", details: coachError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const coachMap = new Map(
+      coachProfiles?.map(cp => [cp.id, cp]) || []
+    );
+
     // Get profile names for each coach
-    const userIds = groupMembers.map((m: any) => m.coach_profiles.user_id);
+    const userIds = coachProfiles?.map(cp => cp.user_id) || [];
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, full_name")
@@ -552,15 +568,18 @@ serve(async (req) => {
     const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
 
     // Build council member list
-    const councilMembers: CouncilMember[] = groupMembers.map((m: any) => ({
-      id: m.id,
-      coachId: m.coach_id,
-      name: profileMap.get(m.coach_profiles.user_id) || "Expert",
-      specialization: m.coach_profiles.specialization || "General",
-      bio: m.coach_profiles.bio || "",
-      expertise: m.coach_profiles.expertise || [],
-      personality: m.coach_profiles.personality || ""
-    }));
+    const councilMembers: CouncilMember[] = groupMembers.map((m) => {
+      const coach = coachMap.get(m.coach_id);
+      return {
+        id: m.id,
+        coachId: m.coach_id,
+        name: coach ? (profileMap.get(coach.user_id) || "Expert") : "Expert",
+        specialization: coach?.specialization || "General",
+        bio: coach?.bio || "",
+        expertise: coach?.expertise || [],
+        personality: coach?.personality || ""
+      };
+    });
 
     trace.councilSize = councilMembers.length;
     console.log(`[syndic8-council] [${trace.requestId}] Starting council session with ${councilMembers.length} experts, template: ${template}`);
