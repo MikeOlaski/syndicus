@@ -1,6 +1,7 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Users, DollarSign, Star, CheckCircle } from "lucide-react";
+import { CoachSyndic8Approvals } from "@/components/CoachSyndic8Approvals";
 
 const CoachDashboard = () => {
   return (
@@ -12,6 +13,9 @@ const CoachDashboard = () => {
             Manage your digital twin and track your performance.
           </p>
         </div>
+
+        {/* Syndic8 Public Visibility Approvals */}
+        <CoachSyndic8Approvals />
 
         {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
