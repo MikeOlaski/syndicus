@@ -381,7 +381,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
       title: "Chat deleted",
       description: "The chat session has been removed.",
     });
-  }, [coachId, sessionId, dbSessionId, createNewSession, endDbSession, toast]);
+  }, [coachId, sessionId, dbSessionId, createNewSession, endDbSession, toast, guestLimit]);
 
   const sendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || message;
@@ -498,7 +498,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     } finally {
       setIsLoading(false);
     }
-  }, [message, isLoading, coach?.hasWebhook, coach?.profileId, coachId, sessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount]);
+  }, [message, isLoading, coach?.hasWebhook, coach?.profileId, coachId, sessionId, dbSessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount, updateDbSessionMessageCount]);
 
   return {
     message,
