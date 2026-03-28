@@ -150,7 +150,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
   }, []);
 
   // Update message count in database session
-  const updateDbSessionMessageCount = useCallback(async (dbId: string) => {
+  const updateDbSessionMessageCount = useCallback(async (dbId: string, guestSessId?: string | null) => {
     try {
       // Get current count and increment
       const { data: current } = await supabase
@@ -159,19 +159,28 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         .eq("id", dbId)
         .single();
 
-      await supabase
-        .from("coach_sessions")
-        .update({ 
-          message_count: (current?.message_count || 0) + 1,
-        })
-        .eq("id", dbId);
+      const newCount = (current?.message_count || 0) + 1;
+
+      if (guestSessId) {
+        // Use RPC for guest sessions (no direct UPDATE allowed)
+        await supabase.rpc("update_guest_session", {
+          p_session_id: dbId,
+          p_guest_session_id: guestSessId,
+          p_message_count: newCount,
+        });
+      } else {
+        await supabase
+          .from("coach_sessions")
+          .update({ message_count: newCount })
+          .eq("id", dbId);
+      }
     } catch (error) {
       console.error("Error updating session message count:", error);
     }
   }, []);
 
   // End database session
-  const endDbSession = useCallback(async (dbId: string) => {
+  const endDbSession = useCallback(async (dbId: string, guestSessId?: string | null) => {
     try {
       const { data: session } = await supabase
         .from("coach_sessions")
@@ -184,13 +193,22 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         const endTime = Date.now();
         const durationSeconds = Math.floor((endTime - startTime) / 1000);
 
-        await supabase
-          .from("coach_sessions")
-          .update({ 
-            ended_at: new Date().toISOString(),
-            duration_seconds: durationSeconds,
-          })
-          .eq("id", dbId);
+        if (guestSessId) {
+          await supabase.rpc("update_guest_session", {
+            p_session_id: dbId,
+            p_guest_session_id: guestSessId,
+            p_ended_at: new Date().toISOString(),
+            p_duration_seconds: durationSeconds,
+          });
+        } else {
+          await supabase
+            .from("coach_sessions")
+            .update({ 
+              ended_at: new Date().toISOString(),
+              duration_seconds: durationSeconds,
+            })
+            .eq("id", dbId);
+        }
       }
     } catch (error) {
       console.error("Error ending db session:", error);
@@ -345,7 +363,8 @@ export const useCoachChat = (coachSlug: string | undefined) => {
 
     // End the database session before deleting
     if (dbSessionId && sessionIdToDelete === sessionId) {
-      await endDbSession(dbSessionId);
+      const isGuest = guestLimit.isGuest;
+      await endDbSession(dbSessionId, isGuest ? sessionIdToDelete : null);
     }
 
     const allSessions = getSessions(coachId);
@@ -362,7 +381,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
       title: "Chat deleted",
       description: "The chat session has been removed.",
     });
-  }, [coachId, sessionId, dbSessionId, createNewSession, endDbSession, toast]);
+  }, [coachId, sessionId, dbSessionId, createNewSession, endDbSession, toast, guestLimit]);
 
   const sendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || message;
@@ -465,8 +484,9 @@ export const useCoachChat = (coachSlug: string | undefined) => {
       
       // Update database session message count (count both user and assistant messages)
       if (dbSessionId) {
-        await updateDbSessionMessageCount(dbSessionId);
-        await updateDbSessionMessageCount(dbSessionId);
+        const guestSessId = guestLimit.isGuest ? sessionId : null;
+        await updateDbSessionMessageCount(dbSessionId, guestSessId);
+        await updateDbSessionMessageCount(dbSessionId, guestSessId);
       }
     } catch (error: any) {
       console.error("Chat error:", error);
@@ -478,7 +498,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
     } finally {
       setIsLoading(false);
     }
-  }, [message, isLoading, coach?.hasWebhook, coach?.profileId, coachId, sessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount]);
+  }, [message, isLoading, coach?.hasWebhook, coach?.profileId, coachId, sessionId, dbSessionId, toast, guestLimit, checkDailyMessageLimit, incrementMessageCount, updateDbSessionMessageCount]);
 
   return {
     message,
