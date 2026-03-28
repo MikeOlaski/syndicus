@@ -180,7 +180,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
   }, []);
 
   // End database session
-  const endDbSession = useCallback(async (dbId: string) => {
+  const endDbSession = useCallback(async (dbId: string, guestSessId?: string | null) => {
     try {
       const { data: session } = await supabase
         .from("coach_sessions")
@@ -193,13 +193,22 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         const endTime = Date.now();
         const durationSeconds = Math.floor((endTime - startTime) / 1000);
 
-        await supabase
-          .from("coach_sessions")
-          .update({ 
-            ended_at: new Date().toISOString(),
-            duration_seconds: durationSeconds,
-          })
-          .eq("id", dbId);
+        if (guestSessId) {
+          await supabase.rpc("update_guest_session", {
+            p_session_id: dbId,
+            p_guest_session_id: guestSessId,
+            p_ended_at: new Date().toISOString(),
+            p_duration_seconds: durationSeconds,
+          });
+        } else {
+          await supabase
+            .from("coach_sessions")
+            .update({ 
+              ended_at: new Date().toISOString(),
+              duration_seconds: durationSeconds,
+            })
+            .eq("id", dbId);
+        }
       }
     } catch (error) {
       console.error("Error ending db session:", error);
