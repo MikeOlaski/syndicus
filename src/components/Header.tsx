@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, LogIn, UserPlus, Briefcase, HelpCircle } from "lucide-react";
-import brandIcon from "@/assets/brand-icon.png";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
@@ -103,7 +102,7 @@ const Header = () => {
     <header className="border-b bg-background sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <a href="/" className="flex items-center gap-2">
-          <img src={brandIcon} alt="Syndic.us" className="w-8 h-8 rounded-lg" />
+          <img src="/images/synd-icon.webp" alt="Syndic.us" className="w-8 h-8 rounded-lg" />
           <div>
             <h1 className="font-bold text-lg leading-none">Syndic.us</h1>
             <p className="text-xs text-muted-foreground">Syndicated Digital Twin PersonaBots</p>

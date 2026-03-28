@@ -87,22 +87,26 @@ const Stats = () => {
   ];
 
   return (
-    <section className="py-16 px-4">
-      <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+    <section className="py-24 px-4 bg-secondary/30 border-y border-border/50 relative overflow-hidden">
+      {/* Subtle background pattern/glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(var(--primary-rgb),0.05),transparent_40%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(var(--primary-rgb),0.03),transparent_40%)] pointer-events-none" />
+      
+      <div className="container mx-auto relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 text-center items-center">
           {statsConfig.map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-primary mx-auto mb-4 flex items-center justify-center">
-                <stat.icon className="w-8 h-8 text-white" />
+            <div key={index} className="flex flex-col items-center group">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-primary mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary/20 transform group-hover:scale-110 transition-transform duration-500">
+                <stat.icon className="w-10 h-10 text-white" />
               </div>
-              <div className="text-4xl font-bold mb-2">
+              <div className="text-5xl md:text-6xl font-extrabold tracking-tight mb-3 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-transparent">
                 {isLoading ? (
                   <span className="animate-pulse">...</span>
                 ) : (
                   stat.value
                 )}
               </div>
-              <div className="text-muted-foreground">{stat.label}</div>
+              <div className="text-sm font-semibold text-muted-foreground uppercase tracking-[0.2em]">{stat.label}</div>
             </div>
           ))}
         </div>

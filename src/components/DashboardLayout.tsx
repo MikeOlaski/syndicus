@@ -81,9 +81,7 @@ export const DashboardLayout = ({ children, requiredRole }: DashboardLayoutProps
             <SidebarTrigger />
             <div className="flex-1 flex items-center justify-center">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-white" />
-                </div>
+                <img src="/images/synd-icon.webp" alt="Syndic.us" className="w-8 h-8 rounded-lg" />
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-lg">Syndic.us</span>
                   {userRole === "admin" && (

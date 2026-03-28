@@ -25,9 +25,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-white" />
-              </div>
+            <img src="/images/synd-icon.webp" alt="Syndic.us" className="w-8 h-8 rounded-lg" />
               <span className="font-bold text-lg text-white">Syndic.us</span>
             </div>
             <p className="text-sm text-footer-foreground/80">

@@ -55,11 +55,23 @@ export const useCoaches = () => {
 
       return (coachProfiles || []).map((coach, index): Coach => {
         const profile = profilesById.get(coach.user_id);
-        console.log(`[useCoaches] Coach ${profile?.full_name}: slug = ${coach.slug}`);
+        const fallbackImages = [
+          "1472099645785-5658abf4ff4e",
+          "1580489944761-15a19d654956",
+          "1507679722338-947c17693fb",
+          "1519085360753-af0119f7cbe7",
+          "1531123897727-8f129e1688ce",
+          "1531427186611-ecfd6d936c79",
+          "1573497019940-1c28c88b4f3e",
+          "1544005313-94ddf0286df2",
+          "1506794778287-f247c17693fb",
+          "1534528741775-53994a69daeb",
+        ];
+        const fallbackImage = fallbackImages[index % fallbackImages.length];
         
         return {
           id: coach.user_id,
-          slug: coach.slug || coach.user_id, // Fallback to user_id if no slug
+          slug: coach.slug || coach.user_id,
           name: profile?.full_name || "Coach",
           email: "",
           specialization: coach.specialization || "General Coaching",
@@ -72,7 +84,7 @@ export const useCoaches = () => {
           tags: coach.expertise || ["Coaching"],
           image:
             profile?.avatar_url ||
-            `https://images.unsplash.com/photo-${1500000000000 + index}?w=400&h=400&fit=crop`,
+            `https://images.unsplash.com/photo-${fallbackImage}?w=400&h=400&fit=crop`,
           variant: index % 3 === 0 ? "primary" : "secondary",
           hourlyRate: coach.hourly_rate || undefined,
           isVerified: coach.is_verified || false,
