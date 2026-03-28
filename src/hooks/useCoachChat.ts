@@ -363,7 +363,8 @@ export const useCoachChat = (coachSlug: string | undefined) => {
 
     // End the database session before deleting
     if (dbSessionId && sessionIdToDelete === sessionId) {
-      await endDbSession(dbSessionId);
+      const isGuest = guestLimit.isGuest;
+      await endDbSession(dbSessionId, isGuest ? sessionIdToDelete : null);
     }
 
     const allSessions = getSessions(coachId);
@@ -483,8 +484,9 @@ export const useCoachChat = (coachSlug: string | undefined) => {
       
       // Update database session message count (count both user and assistant messages)
       if (dbSessionId) {
-        await updateDbSessionMessageCount(dbSessionId);
-        await updateDbSessionMessageCount(dbSessionId);
+        const guestSessId = guestLimit.isGuest ? sessionId : null;
+        await updateDbSessionMessageCount(dbSessionId, guestSessId);
+        await updateDbSessionMessageCount(dbSessionId, guestSessId);
       }
     } catch (error: any) {
       console.error("Chat error:", error);
