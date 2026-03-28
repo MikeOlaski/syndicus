@@ -1121,6 +1121,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_daily_message_usage: {
+        Args: { p_coach_id: string }
+        Returns: Json
+      }
       is_syndic8_group_owner: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
