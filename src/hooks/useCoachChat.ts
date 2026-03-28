@@ -150,7 +150,7 @@ export const useCoachChat = (coachSlug: string | undefined) => {
   }, []);
 
   // Update message count in database session
-  const updateDbSessionMessageCount = useCallback(async (dbId: string) => {
+  const updateDbSessionMessageCount = useCallback(async (dbId: string, guestSessId?: string | null) => {
     try {
       // Get current count and increment
       const { data: current } = await supabase
@@ -159,12 +159,21 @@ export const useCoachChat = (coachSlug: string | undefined) => {
         .eq("id", dbId)
         .single();
 
-      await supabase
-        .from("coach_sessions")
-        .update({ 
-          message_count: (current?.message_count || 0) + 1,
-        })
-        .eq("id", dbId);
+      const newCount = (current?.message_count || 0) + 1;
+
+      if (guestSessId) {
+        // Use RPC for guest sessions (no direct UPDATE allowed)
+        await supabase.rpc("update_guest_session", {
+          p_session_id: dbId,
+          p_guest_session_id: guestSessId,
+          p_message_count: newCount,
+        });
+      } else {
+        await supabase
+          .from("coach_sessions")
+          .update({ message_count: newCount })
+          .eq("id", dbId);
+      }
     } catch (error) {
       console.error("Error updating session message count:", error);
     }
