@@ -92,7 +92,7 @@ export const useSubscriptionLimits = () => {
 
       const today = new Date().toISOString().split("T")[0];
 
-      // Get today's usage
+      // Read-only check of current usage
       const { data: usage } = await supabase
         .from("daily_message_usage")
         .select("message_count")
@@ -117,34 +117,14 @@ export const useSubscriptionLimits = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
 
-      const today = new Date().toISOString().split("T")[0];
+      // Use server-side RPC to atomically increment (prevents client manipulation)
+      const { data, error } = await supabase.rpc("increment_daily_message_usage", {
+        p_coach_id: coachId,
+      });
 
-      // Try to upsert the message count
-      const { data: existing } = await supabase
-        .from("daily_message_usage")
-        .select("id, message_count")
-        .eq("user_id", session.user.id)
-        .eq("coach_id", coachId)
-        .eq("message_date", today)
-        .single();
-
-      if (existing) {
-        await supabase
-          .from("daily_message_usage")
-          .update({ 
-            message_count: existing.message_count + 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", existing.id);
-      } else {
-        await supabase
-          .from("daily_message_usage")
-          .insert({
-            user_id: session.user.id,
-            coach_id: coachId,
-            message_date: today,
-            message_count: 1,
-          });
+      if (error) {
+        console.error("Error incrementing message count:", error);
+        return false;
       }
 
       return true;
