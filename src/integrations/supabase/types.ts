@@ -276,7 +276,7 @@ export type Database = {
       external_api_keys: {
         Row: {
           allowed_origins: string[] | null
-          api_key: string
+          api_key_hash: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
@@ -287,7 +287,7 @@ export type Database = {
         }
         Insert: {
           allowed_origins?: string[] | null
-          api_key: string
+          api_key_hash?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -298,7 +298,7 @@ export type Database = {
         }
         Update: {
           allowed_origins?: string[] | null
-          api_key?: string
+          api_key_hash?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
