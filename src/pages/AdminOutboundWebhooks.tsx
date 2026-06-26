@@ -55,7 +55,7 @@ interface OutboundWebhook {
   name: string;
   description: string | null;
   url: string;
-  secret_key: string;
+  secret_key_hash: string;
   events: string[];
   is_active: boolean;
   last_triggered_at: string | null;
@@ -64,6 +64,19 @@ interface OutboundWebhook {
   expires_at: string | null;
   chat_enabled: boolean;
 }
+
+// Generate a random plaintext key and its SHA-256 hash (hex).
+// Plaintext is shown to the admin once; only the hash is stored.
+const generateSecretKeyPair = async (): Promise<{ plaintext: string; hash: string }> => {
+  const plaintext = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plaintext));
+  const hash = Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  return { plaintext, hash };
+};
 
 interface WebhookLog {
   id: string;
@@ -178,22 +191,29 @@ const AdminOutboundWebhooks = () => {
     }
 
     try {
+      const { plaintext, hash } = await generateSecretKeyPair();
       const { error } = await supabase
         .from("outbound_webhooks")
         .insert({
           name: newWebhook.name,
           description: newWebhook.description || null,
           url: newWebhook.url,
+          secret_key_hash: hash,
           events: newWebhook.events,
           expires_at: getExpiryDate(newWebhook.expiryOption),
           chat_enabled: newWebhook.chatEnabled,
         });
 
       if (error) throw error;
-      
-      toast.success("Webhook added successfully");
+
+      // Show the plaintext key ONCE — it is not stored and cannot be retrieved later.
+      await navigator.clipboard.writeText(plaintext).catch(() => {});
+      toast.success("Webhook added. Secret key copied to clipboard — store it now, it will not be shown again.", {
+        description: plaintext,
+        duration: 30000,
+      });
       setIsAddModalOpen(false);
-      setNewWebhook({ name: '', description: '', url: '', events: ['coach.published', 'coach.updated', 'coach.unpublished'], expiryOption: 'never', chatEnabled: false });
+      setNewWebhook({ name: '', description: '', url: '', events: ['coach.verified', 'coach.updated', 'coach.unverified'], expiryOption: 'never', chatEnabled: false });
       fetchWebhooks();
     } catch (error) {
       toast.error("Failed to add webhook");
@@ -230,21 +250,22 @@ const AdminOutboundWebhooks = () => {
   const handleRegenerateSecret = async (webhook: OutboundWebhook, expiryOption: string) => {
     setRegeneratingId(webhook.id);
     try {
-      // Generate a new secret key
-      const newSecretKey = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+      const { plaintext, hash } = await generateSecretKeyPair();
 
       const { error } = await supabase
         .from("outbound_webhooks")
         .update({
-          secret_key: newSecretKey,
+          secret_key_hash: hash,
           expires_at: getExpiryDate(expiryOption),
         })
         .eq("id", webhook.id);
 
       if (error) throw error;
-      toast.success("Secret key regenerated successfully");
+      await navigator.clipboard.writeText(plaintext).catch(() => {});
+      toast.success("New secret key copied to clipboard — store it now, it will not be shown again.", {
+        description: plaintext,
+        duration: 30000,
+      });
       fetchWebhooks();
     } catch (error) {
       toast.error("Failed to regenerate secret key");
@@ -529,7 +550,7 @@ const AdminOutboundWebhooks = () => {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <Label className="text-sm text-muted-foreground">Secret Key</Label>
+                      <Label className="text-sm text-muted-foreground">Secret Key Hash</Label>
                       {webhook.expires_at && (
                         <div className="flex items-center gap-1">
                           {isExpired(webhook.expires_at) ? (
@@ -555,36 +576,27 @@ const AdminOutboundWebhooks = () => {
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Input
-                          type={showSecrets[webhook.id] ? "text" : "password"}
-                          value={webhook.secret_key}
+                          type="text"
+                          value={webhook.secret_key_hash}
                           readOnly
-                          className={`pr-20 ${isExpired(webhook.expires_at) ? 'border-destructive' : ''}`}
+                          className={`pr-20 font-mono text-xs ${isExpired(webhook.expires_at) ? 'border-destructive' : ''}`}
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            onClick={() => toggleSecret(webhook.id)}
-                          >
-                            {showSecrets[webhook.id] ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => copyToClipboard(webhook.secret_key)}
+                            onClick={() => copyToClipboard(webhook.secret_key_hash)}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
                     </div>
-                    
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only the hash of the secret key is stored. The plaintext key is shown only once at creation/regeneration. Regenerate below if it was lost.
+                    </p>
+
                     {/* Regenerate Secret Key Section */}
                     <div className="mt-2 flex items-center gap-2">
                       <Select

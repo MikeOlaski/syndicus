@@ -1,7 +1,7 @@
 project_id = "hmdhiutehhxmryiowmgm"
 
 [functions.coach-webhook]
-verify_jwt = false
+verify_jwt = true
 
 [functions.import-coaches]
 verify_jwt = true
@@ -31,13 +31,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.persona-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-coach-profile]
 verify_jwt = true
 
 [functions.support-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.transcribe-voice]
 verify_jwt = true
