@@ -6,6 +6,7 @@ import { Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -149,6 +150,7 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen">
+            <SEO title="Pricing — Syndic.us Plans for Members &amp; Coaches" description="Simple, transparent pricing for Syndic.us PersonaBot chats and Syndic8 council sessions. Start free and upgrade anytime." path="/pricing" />
       <Header />
       
       <main className="container mx-auto px-4 py-16">

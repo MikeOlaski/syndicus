@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { Users, MessageCircle, Zap, Globe, Network, Bot, TrendingUp, Search, X, Crown } from "lucide-react";
 import { Syndic8SearchResults } from "@/components/Syndic8SearchResults";
 import FeaturedSyndic8Section from "@/components/FeaturedSyndic8Section";
+import { SEO } from "@/components/SEO";
 
 const Syndic8 = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const Syndic8 = () => {
   };
 
   return <div className="min-h-screen">
+            <SEO title="Syndic8 — Council of Minds | Syndic.us" description="Convene a Syndic8: a multi-coach AI council that drafts, debates, and synthesizes balanced guidance from world-class coaches." path="/syndic8" />
       <Header />
       
       {/* Hero Section */}

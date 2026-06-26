@@ -63,12 +63,12 @@ const Hero = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="w-full"
               >
-                <h2 className="text-4xl md:text-6xl font-bold leading-tight whitespace-pre-line">
+                <h1 className="text-4xl md:text-6xl font-bold leading-tight whitespace-pre-line">
                   {headlines[currentHeadline].main}{"\n"}
                   <span className="bg-gradient-primary bg-clip-text text-transparent">
                     {headlines[currentHeadline].highlight}
                   </span>
-                </h2>
+                </h1>
               </motion.div>
             </AnimatePresence>
 
@@ -109,6 +109,7 @@ const Hero = () => {
               <Button
                 type="submit"
                 size="icon"
+                aria-label="Search coaches and start your council session"
                 className="absolute right-2.5 top-2.5 h-11 w-11 rounded-xl bg-gradient-primary shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
                 disabled={!searchQuery.trim()}
               >

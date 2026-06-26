@@ -9,6 +9,7 @@ import { DollarSign, Users, Clock, TrendingUp, Calendar, Video, Globe, BarChart3
 import VideoPlayerModal from "@/components/VideoPlayerModal";
 import CoachDirectory from "@/components/CoachDirectory";
 import { useState } from "react";
+import { SEO } from "@/components/SEO";
 
 const Coaches = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Coaches = () => {
 
   return (
     <div className="min-h-screen">
+            <SEO title="Coaches — Browse AI Digital Twins | Syndic.us" description="Browse PersonaBots of world-class coaches across leadership, wellness, business, performance, and relationships. Chat 24/7 on Syndic.us." path="/coaches" />
       <Header />
       
       {/* Hero Section */}

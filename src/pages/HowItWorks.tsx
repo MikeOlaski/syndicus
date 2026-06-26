@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Bot, MessageSquare, Users, Zap } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const HowItWorks = () => {
 
   return (
     <div className="min-h-screen">
+            <SEO title="How It Works — Build a PersonaBot &amp; Council | Syndic.us" description="How Syndic.us turns a coach's voice, methods, and content into an AI PersonaBot — and how members convene a Council of Minds." path="/how-it-works" />
       <Header />
       
       <main className="container mx-auto px-4 py-16">
