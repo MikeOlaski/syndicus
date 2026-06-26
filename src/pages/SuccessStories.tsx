@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Quote } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const SuccessStories = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const SuccessStories = () => {
 
   return (
     <div className="min-h-screen">
+            <SEO title="Success Stories — Coaches &amp; Members | Syndic.us" description="Real results from coaches scaling with PersonaBots and members getting breakthroughs from Syndic8 councils on Syndic.us." path="/success-stories" />
       <Header />
       
       <main className="container mx-auto px-4 py-16">

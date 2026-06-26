@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, MessageSquare, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { SEO } from "@/components/SEO";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -49,6 +50,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen">
+            <SEO title="Contact Syndic.us — Partnerships &amp; Inquiries" description="Get in touch with the Syndic.us team for partnerships, press, coach onboarding, and general inquiries." path="/contact" />
       <Header />
       
       <main className="container mx-auto px-4 py-16">

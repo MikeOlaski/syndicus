@@ -1,9 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 
 const Privacy = () => {
   return (
     <div className="min-h-screen">
+            <SEO title="Privacy Policy — Syndic.us" description="How Syndic.us collects, uses, and protects your personal data across PersonaBot chats and Syndic8 council sessions." path="/privacy" />
       <Header />
       
       <main className="container mx-auto px-4 py-16 max-w-4xl">

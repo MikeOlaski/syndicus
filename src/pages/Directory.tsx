@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PublicSyndic8Card from "@/components/PublicSyndic8Card";
 import { 
+import { SEO } from "@/components/SEO";
   Loader2, 
   Search, 
   Star, 
@@ -92,6 +93,7 @@ const Directory = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+            <SEO title="Directory — Coaches &amp; Public Syndic8 Councils | Syndic.us" description="Search and filter every PersonaBot coach and public Syndic8 council on Syndic.us. Find the right experts for your challenge." path="/directory" />
       <Header />
       <main className="flex-1 py-12 px-4">
         <div className="container mx-auto max-w-7xl">

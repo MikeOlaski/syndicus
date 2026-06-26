@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import WaitlistModal from "@/components/WaitlistModal";
+import { SEO } from "@/components/SEO";
 
 const claimSchema = z.object({
   botUrl: z.string()
@@ -67,6 +68,7 @@ const CreateClaim = () => {
 
   return (
     <div className="min-h-screen">
+            <SEO title="Create or Claim Your PersonaBot | Syndic.us" description="Coaches: create a new AI digital twin or claim an existing PersonaBot on Syndic.us in minutes." path="/create-claim" />
       <Header />
       
       {/* Hero Section */}

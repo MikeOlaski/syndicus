@@ -3,12 +3,14 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Users, MessageCircle, Zap, Target, Heart, Lightbulb, Shield } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 const About = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen">
+            <SEO title="About Syndic.us — Mission &amp; Council of Minds" description="The story behind Syndic.us — why we built AI digital twins of world-class coaches and a Council of Minds for personalized 24/7 guidance." path="/about" />
       <Header />
       
       {/* Hero Section */}
