@@ -12,8 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PublicSyndic8Card from "@/components/PublicSyndic8Card";
-import { 
 import { SEO } from "@/components/SEO";
+import { 
   Loader2, 
   Search, 
   Star, 
