@@ -55,7 +55,7 @@ interface OutboundWebhook {
   name: string;
   description: string | null;
   url: string;
-  secret_key: string;
+  secret_key_hash: string;
   events: string[];
   is_active: boolean;
   last_triggered_at: string | null;
@@ -64,6 +64,19 @@ interface OutboundWebhook {
   expires_at: string | null;
   chat_enabled: boolean;
 }
+
+// Generate a random plaintext key and its SHA-256 hash (hex).
+// Plaintext is shown to the admin once; only the hash is stored.
+const generateSecretKeyPair = async (): Promise<{ plaintext: string; hash: string }> => {
+  const plaintext = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plaintext));
+  const hash = Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  return { plaintext, hash };
+};
 
 interface WebhookLog {
   id: string;
