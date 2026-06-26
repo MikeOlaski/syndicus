@@ -191,22 +191,29 @@ const AdminOutboundWebhooks = () => {
     }
 
     try {
+      const { plaintext, hash } = await generateSecretKeyPair();
       const { error } = await supabase
         .from("outbound_webhooks")
         .insert({
           name: newWebhook.name,
           description: newWebhook.description || null,
           url: newWebhook.url,
+          secret_key_hash: hash,
           events: newWebhook.events,
           expires_at: getExpiryDate(newWebhook.expiryOption),
           chat_enabled: newWebhook.chatEnabled,
         });
 
       if (error) throw error;
-      
-      toast.success("Webhook added successfully");
+
+      // Show the plaintext key ONCE — it is not stored and cannot be retrieved later.
+      await navigator.clipboard.writeText(plaintext).catch(() => {});
+      toast.success("Webhook added. Secret key copied to clipboard — store it now, it will not be shown again.", {
+        description: plaintext,
+        duration: 30000,
+      });
       setIsAddModalOpen(false);
-      setNewWebhook({ name: '', description: '', url: '', events: ['coach.published', 'coach.updated', 'coach.unpublished'], expiryOption: 'never', chatEnabled: false });
+      setNewWebhook({ name: '', description: '', url: '', events: ['coach.verified', 'coach.updated', 'coach.unverified'], expiryOption: 'never', chatEnabled: false });
       fetchWebhooks();
     } catch (error) {
       toast.error("Failed to add webhook");
