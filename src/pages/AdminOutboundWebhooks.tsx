@@ -596,9 +596,7 @@ const AdminOutboundWebhooks = () => {
                     <p className="text-xs text-muted-foreground mt-1">
                       Only the hash of the secret key is stored. The plaintext key is shown only once at creation/regeneration. Regenerate below if it was lost.
                     </p>
-                    </div>
 
-                    
                     {/* Regenerate Secret Key Section */}
                     <div className="mt-2 flex items-center gap-2">
                       <Select
