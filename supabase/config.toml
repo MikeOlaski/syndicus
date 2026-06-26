@@ -31,7 +31,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.persona-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-coach-profile]
 verify_jwt = true
