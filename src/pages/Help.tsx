@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SupportChatBubble from "@/components/SupportChatBubble";
+import { SEO } from "@/components/SEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -45,8 +46,22 @@ const Help = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Help Center — Syndic.us"
+        description="Answers to common questions about Syndic.us PersonaBots, Syndic8 councils, coach onboarding, pricing, and IP protection."
+        path="/help"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: faqs.map((f) => ({
+            "@type": "Question",
+            name: f.question,
+            acceptedAnswer: { "@type": "Answer", text: f.answer },
+          })),
+        }}
+      />
       <Header />
-      
+
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6">Help Center</h1>
