@@ -1,0 +1,24 @@
+# Syndic.us
+
+> AI-powered digital twins of world-class coaches, delivered as a Council of Minds for 24/7 personalized guidance.
+
+Syndic.us lets people consult an AI Council made up of digital twins ("PersonaBots") of real coaches. Each PersonaBot represents a coach's voice, methodology, and expertise. Users can chat 1-on-1 with a single coach or convene a Syndic8 — a multi-coach council that drafts, debates, and synthesizes balanced recommendations.
+
+## Pages
+
+- [Home](/): Overview, hero, featured coaches, and Syndic8 council intro.
+- [About](/about): Mission and story behind Syndic.us.
+- [How it works](/how-it-works): How PersonaBots and the Council of Minds operate.
+- [Pricing](/pricing): Subscription tiers and what is included.
+- [Coaches](/coaches): Browse coach digital twins.
+- [Directory](/directory): Full coach + public Syndic8 directory with filters.
+- [Syndic8](/syndic8): Council of Minds — multi-coach group sessions.
+- [Create or Claim](/create-claim): Coaches build or claim their PersonaBot.
+- [Success stories](/success-stories): Outcomes from real users and coaches.
+- [Help](/help): FAQs on PersonaBots, Syndic8s, and coach onboarding.
+
+## Optional
+
+- [Support](/support): Contact form for help requests.
+- [Contact](/contact): Business and partnership inquiries.
+- [Privacy](/privacy): Privacy policy.

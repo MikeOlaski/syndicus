@@ -148,7 +148,7 @@ const Header = () => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant="ghost" size="icon" aria-label="Open account menu" className="rounded-full">
                 <User className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>

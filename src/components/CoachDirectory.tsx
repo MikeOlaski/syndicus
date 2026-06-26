@@ -119,6 +119,7 @@ const CoachDirectory = () => {
                   <Button
                     size="icon"
                     variant="ghost"
+                    aria-label="Open AI coach advisor"
                     className="absolute right-2 top-1/2 -translate-y-1/2 hover:bg-transparent"
                     onClick={() => setShowAdvisor(true)}
                   >
@@ -132,6 +133,8 @@ const CoachDirectory = () => {
                   <Button
                     size="sm"
                     variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    aria-label="Switch to grid view"
+                    aria-pressed={viewMode === "grid"}
                     className={`h-9 w-9 p-0 rounded-lg ${viewMode === "grid" ? "shadow-sm bg-background" : ""}`}
                     onClick={() => setViewMode("grid")}
                   >
@@ -140,6 +143,8 @@ const CoachDirectory = () => {
                   <Button
                     size="sm"
                     variant={viewMode === "table" ? "secondary" : "ghost"}
+                    aria-label="Switch to list view"
+                    aria-pressed={viewMode === "table"}
                     className={`h-9 w-9 p-0 rounded-lg ${viewMode === "table" ? "shadow-sm bg-background" : ""}`}
                     onClick={() => setViewMode("table")}
                   >
@@ -161,7 +166,7 @@ const CoachDirectory = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="outline" size="sm" className="h-11 w-11 p-0 rounded-xl border-border/60">
+                <Button variant="outline" size="sm" aria-label="Open filters" className="h-11 w-11 p-0 rounded-xl border-border/60">
                   <SlidersHorizontal className="w-4 h-4" />
                 </Button>
               </div>
