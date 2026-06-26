@@ -550,7 +550,7 @@ const AdminOutboundWebhooks = () => {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <Label className="text-sm text-muted-foreground">Secret Key</Label>
+                      <Label className="text-sm text-muted-foreground">Secret Key Hash</Label>
                       {webhook.expires_at && (
                         <div className="flex items-center gap-1">
                           {isExpired(webhook.expires_at) ? (
@@ -576,35 +576,28 @@ const AdminOutboundWebhooks = () => {
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <Input
-                          type={showSecrets[webhook.id] ? "text" : "password"}
-                          value={webhook.secret_key}
+                          type="text"
+                          value={webhook.secret_key_hash}
                           readOnly
-                          className={`pr-20 ${isExpired(webhook.expires_at) ? 'border-destructive' : ''}`}
+                          className={`pr-20 font-mono text-xs ${isExpired(webhook.expires_at) ? 'border-destructive' : ''}`}
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            onClick={() => toggleSecret(webhook.id)}
-                          >
-                            {showSecrets[webhook.id] ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => copyToClipboard(webhook.secret_key)}
+                            onClick={() => copyToClipboard(webhook.secret_key_hash)}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only the hash of the secret key is stored. The plaintext key is shown only once at creation/regeneration. Regenerate below if it was lost.
+                    </p>
+                    </div>
+
                     
                     {/* Regenerate Secret Key Section */}
                     <div className="mt-2 flex items-center gap-2">
