@@ -162,8 +162,8 @@ serve(async (req) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Webhook-Secret': webhook.secret_key,
-              'X-Api-Key': webhook.secret_key,
+              'X-Webhook-Secret': webhook.secret_key_hash,
+              'X-Api-Key': webhook.secret_key_hash,
               'X-Event-Type': event,
               'X-Timestamp': Date.now().toString(),
             },
