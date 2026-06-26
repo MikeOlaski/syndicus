@@ -250,21 +250,22 @@ const AdminOutboundWebhooks = () => {
   const handleRegenerateSecret = async (webhook: OutboundWebhook, expiryOption: string) => {
     setRegeneratingId(webhook.id);
     try {
-      // Generate a new secret key
-      const newSecretKey = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+      const { plaintext, hash } = await generateSecretKeyPair();
 
       const { error } = await supabase
         .from("outbound_webhooks")
         .update({
-          secret_key: newSecretKey,
+          secret_key_hash: hash,
           expires_at: getExpiryDate(expiryOption),
         })
         .eq("id", webhook.id);
 
       if (error) throw error;
-      toast.success("Secret key regenerated successfully");
+      await navigator.clipboard.writeText(plaintext).catch(() => {});
+      toast.success("New secret key copied to clipboard — store it now, it will not be shown again.", {
+        description: plaintext,
+        duration: 30000,
+      });
       fetchWebhooks();
     } catch (error) {
       toast.error("Failed to regenerate secret key");
