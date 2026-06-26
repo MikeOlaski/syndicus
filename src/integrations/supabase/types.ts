@@ -204,6 +204,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "coach_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_listing"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "coach_sessions_subscriber_id_fkey"
             columns: ["subscriber_id"]
             isOneToOne: false
@@ -354,7 +361,7 @@ export type Database = {
           last_response_status: number | null
           last_triggered_at: string | null
           name: string
-          secret_key: string
+          secret_key_hash: string
           updated_at: string
           url: string
         }
@@ -369,7 +376,7 @@ export type Database = {
           last_response_status?: number | null
           last_triggered_at?: string | null
           name: string
-          secret_key?: string
+          secret_key_hash: string
           updated_at?: string
           url: string
         }
@@ -384,7 +391,7 @@ export type Database = {
           last_response_status?: number | null
           last_triggered_at?: string | null
           name?: string
-          secret_key?: string
+          secret_key_hash?: string
           updated_at?: string
           url?: string
         }
@@ -510,6 +517,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "public_coach_directory"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_listing"
             referencedColumns: ["user_id"]
           },
         ]
@@ -796,6 +810,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "syndic8_messages_expert_coach_id_fkey"
+            columns: ["expert_coach_id"]
+            isOneToOne: false
+            referencedRelation: "public_coach_listing"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "syndic8_messages_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -1034,6 +1055,72 @@ export type Database = {
           is_claimed?: boolean | null
           is_verified?: boolean | null
           linkedin_url?: string | null
+          rating?: number | null
+          show_on_homepage?: boolean | null
+          slug?: string | null
+          specialization?: string | null
+          status?: Database["public"]["Enums"]["coach_status"] | null
+          total_sessions?: number | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      public_coach_listing: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          expertise: string[] | null
+          hourly_rate: number | null
+          id: string | null
+          instagram_url: string | null
+          is_verified: boolean | null
+          linkedin_url: string | null
+          personality: string | null
+          rating: number | null
+          show_on_homepage: boolean | null
+          slug: string | null
+          specialization: string | null
+          status: Database["public"]["Enums"]["coach_status"] | null
+          total_sessions: number | null
+          twitter_url: string | null
+          updated_at: string | null
+          user_id: string | null
+          website_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          expertise?: string[] | null
+          hourly_rate?: number | null
+          id?: string | null
+          instagram_url?: string | null
+          is_verified?: boolean | null
+          linkedin_url?: string | null
+          personality?: string | null
+          rating?: number | null
+          show_on_homepage?: boolean | null
+          slug?: string | null
+          specialization?: string | null
+          status?: Database["public"]["Enums"]["coach_status"] | null
+          total_sessions?: number | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          expertise?: string[] | null
+          hourly_rate?: number | null
+          id?: string | null
+          instagram_url?: string | null
+          is_verified?: boolean | null
+          linkedin_url?: string | null
+          personality?: string | null
           rating?: number | null
           show_on_homepage?: boolean | null
           slug?: string | null
