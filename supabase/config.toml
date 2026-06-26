@@ -37,7 +37,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.support-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.transcribe-voice]
 verify_jwt = true
