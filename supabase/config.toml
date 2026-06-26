@@ -1,7 +1,7 @@
 project_id = "hmdhiutehhxmryiowmgm"
 
 [functions.coach-webhook]
-verify_jwt = false
+verify_jwt = true
 
 [functions.import-coaches]
 verify_jwt = true
