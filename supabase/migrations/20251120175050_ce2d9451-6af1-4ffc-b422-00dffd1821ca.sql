@@ -1,0 +1,2 @@
+-- Temporarily make import-coaches function public for one-time import
+-- This will be reverted after import completes

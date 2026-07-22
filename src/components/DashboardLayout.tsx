@@ -1,0 +1,111 @@
+import { ReactNode, useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, MessageSquare, Crown } from "lucide-react";
+
+interface DashboardLayoutProps {
+  children: ReactNode;
+  requiredRole?: "subscriber" | "coach" | "admin";
+}
+
+export const DashboardLayout = ({ children, requiredRole }: DashboardLayoutProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+
+      const { data: rolesData, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id);
+
+      if (!error) {
+        const roles = (rolesData ?? []).map((r: any) => r.role);
+        const resolved = roles.includes("admin")
+          ? "admin"
+          : roles.includes("coach")
+          ? "coach"
+          : roles.includes("subscriber")
+          ? "subscriber"
+          : null;
+
+        if (resolved) {
+          setUserRole(resolved);
+
+          if (requiredRole && resolved !== requiredRole) {
+            if (resolved === "admin") navigate("/admin-dashboard");
+            else if (resolved === "coach") navigate("/coach-dashboard");
+            else navigate("/subscriber-dashboard");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      navigate("/auth");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar userRole={userRole} />
+        
+        <div className="flex-1 flex flex-col">
+          <header className="h-14 border-b flex items-center px-4 bg-background sticky top-0 z-10">
+            <SidebarTrigger />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <img src="/images/synd-icon.webp" alt="Syndic.us" className="w-8 h-8 rounded-lg" />
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-lg">Syndic.us</span>
+                  {userRole === "admin" && (
+                    <Badge variant="default" className="bg-gradient-primary">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Admin
+                    </Badge>
+                  )}
+                  {userRole === "coach" && (
+                    <Badge variant="secondary">Coach</Badge>
+                  )}
+                  {userRole === "subscriber" && (
+                    <Badge variant="secondary">Subscriber</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          <main className="flex-1 overflow-auto p-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+};

@@ -1,0 +1,1 @@
+ALTER TABLE public.outbound_webhooks ALTER COLUMN chat_enabled SET DEFAULT true;

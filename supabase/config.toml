@@ -1,0 +1,55 @@
+project_id = "hmdhiutehhxmryiowmgm"
+
+[functions.coach-webhook]
+verify_jwt = true
+
+[functions.import-coaches]
+verify_jwt = true
+
+[functions.create-coach]
+verify_jwt = false
+
+[functions.agent-response]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.admin-update-password]
+verify_jwt = true
+
+[functions.assign-user-role]
+verify_jwt = true
+
+[functions.expert-advisor]
+verify_jwt = true
+
+[functions.persona-chat]
+verify_jwt = true
+
+[functions.generate-coach-profile]
+verify_jwt = true
+
+[functions.support-chat]
+verify_jwt = true
+
+[functions.transcribe-voice]
+verify_jwt = true
+
+[functions.coaches-api]
+verify_jwt = false
+
+[functions.external-chat]
+verify_jwt = false
+
+[functions.send-coach-webhook]
+verify_jwt = true
+
+[functions.syndic8-council]
+verify_jwt = true
