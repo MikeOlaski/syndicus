@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "agent/remove-malicious-eslint-loader",
+    "codex/rehabit-handoff-build",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "agent/remove-malicious-eslint-loader": "main",
+    "codex/rehabit-handoff-build": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "agent/remove-malicious-eslint-loader",
+    "codex/rehabit-handoff-build",
+    "origin"
+  ]
+}
